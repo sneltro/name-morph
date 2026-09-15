@@ -337,6 +337,9 @@ function applyGenFilter() {
   renderGenResults();
 }
 
+// Reusable SVG for GitHub icon
+const GITHUB_SVG_ICON = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>`;
+
 function renderGenResults() {
   elements.genStatsCount.textContent = genState.filteredResults.length;
 
@@ -359,12 +362,6 @@ function renderGenResults() {
     card.className = 'name-card card-enter';
     const favorited = isFavorite(item.text);
 
-    let tagClass = 'tag-pill';
-    if (item.mode === 'say') tagClass += ' tag-prefix';
-    else if (item.mode === 'read') tagClass += ' tag-letter';
-    else if (item.mode === 'memorable') tagClass += ' tag-suffix';
-    else if (item.mode === 'random') tagClass += ' tag-leet';
-
     card.innerHTML = `
       <div class="card-top">
         <span class="card-text">${item.text}</span>
@@ -383,19 +380,16 @@ function renderGenResults() {
         </div>
       </div>
       <div class="card-bottom">
-        <div class="card-tags">
-          <span class="${tagClass}">${item.tags[0] || item.rule}</span>
-        </div>
         <div class="card-checker">
+          <a class="btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X">X</a>
+          <a class="btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
           <button class="btn-check-link btn-card-tweak" title="Morph variations in Tweaker">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px;">
               <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
             Tweak
           </button>
-          <a class="btn-check-link" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub">GH</a>
-          <a class="btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X">X</a>
         </div>
       </div>
     `;
@@ -698,8 +692,8 @@ function renderResults() {
         </div>
         <div class="card-checker">
           <span class="card-length">${item.text.length} chars</span>
-          <a class="btn-check-link" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub">GH</a>
           <a class="btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X">X</a>
+          <a class="btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
         </div>
       </div>
     `;
