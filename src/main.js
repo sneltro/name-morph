@@ -120,7 +120,6 @@ const elements = {
   loadMoreContainer: document.getElementById('load-more-container'),
   btnLoadMore: document.getElementById('btn-load-more'),
   btnResetRules: document.getElementById('btn-reset-rules'),
-  toastContainer: document.getElementById('toast-container'),
 
   // Favorites Drawer
   btnOpenFavorites: document.getElementById('btn-open-favorites'),
@@ -160,23 +159,10 @@ const elements = {
 };
 
 /**
- * Toast Notification Helper
+ * Toast Notification Helper (Disabled)
  */
-function showToast(message) {
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.innerHTML = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="20 6 9 17 4 12"/>
-    </svg>
-    <span>${message}</span>
-  `;
-  elements.toastContainer.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 200ms ease';
-    setTimeout(() => toast.remove(), 200);
-  }, 2200);
+function showToast() {
+  // Notifications in bottom right corner disabled
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -304,9 +290,9 @@ function generateNames(isUserAction = false) {
 
   if (isUserAction) {
     if (error) {
-      showToast(`⚠️ ${error}`);
+      showToast(error);
     } else if (items.length > 0) {
-      showToast(`✨ Generated ${items.length} fresh names!`);
+      showToast(`Generated ${items.length} fresh names!`);
     }
   }
 }
@@ -346,7 +332,12 @@ function renderGenResults() {
   if (genState.filteredResults.length === 0) {
     elements.genCardsGrid.innerHTML = `
       <div class="empty-state">
-        <div class="empty-state-icon">🔍</div>
+        <div class="empty-state-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
         <h3>No names found</h3>
         <p>Try relaxing your exclusions, changing mode, or adjusting length.</p>
       </div>
@@ -450,7 +441,7 @@ function tweakGeneratedName(name) {
   elements.inputWord.value = name;
   switchSubcategory('tweaker');
   generate({ isUserAction: true });
-  showToast(`✨ Loaded "${name}" into Tweaker!`);
+  showToast(`Loaded "${name}" into Tweaker!`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -597,7 +588,7 @@ function generate(options = {}) {
   }
 
   if (isUserAction && tweakerState.filteredResults.length > 0) {
-    showToast(`✨ Generated ${tweakerState.filteredResults.length} variations for "${word}"!`);
+    showToast(`Generated ${tweakerState.filteredResults.length} variations for "${word}"!`);
   }
 }
 
@@ -634,7 +625,13 @@ function renderResults() {
   if (!tweakerState.word) {
     elements.cardsGrid.innerHTML = `
       <div class="empty-state">
-        <div class="empty-state-icon">💡</div>
+        <div class="empty-state-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path>
+            <path d="M9 18h6"></path>
+            <path d="M10 22h4"></path>
+          </svg>
+        </div>
         <h3>No word entered</h3>
         <p>Type a username, handle, or brand name in the box above to generate variations.</p>
       </div>
@@ -645,7 +642,12 @@ function renderResults() {
   if (tweakerState.filteredResults.length === 0) {
     elements.cardsGrid.innerHTML = `
       <div class="empty-state">
-        <div class="empty-state-icon">🔍</div>
+        <div class="empty-state-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
         <h3>No variations match your filters</h3>
         <p>Try enabling more categories in the sidebar or clearing your search filter.</p>
       </div>
@@ -755,7 +757,11 @@ function updateFavoritesUI() {
   if (favorites.length === 0) {
     elements.drawerFavoritesList.innerHTML = `
       <div class="empty-state" style="padding: 2rem 1rem;">
-        <div class="empty-state-icon">⭐</div>
+        <div class="empty-state-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </div>
         <h4 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 0.25rem;">No saved names yet</h4>
         <p style="font-size: 0.8rem; color: var(--text-muted);">Click the star icon on any generated name to save it here.</p>
       </div>
@@ -781,7 +787,12 @@ function updateFavoritesUI() {
             <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
           </svg>
         </button>
-        <button class="btn-fav-delete" title="Remove">✕</button>
+        <button class="btn-fav-delete" title="Remove" aria-label="Remove">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
     `;
 
@@ -841,7 +852,7 @@ function setupEventListeners() {
           b.style.background = bg;
           b.innerHTML = `<span class="status-indicator" style="background: ${color};"></span><span class="status-text" style="color: ${color};">${st}</span>`;
         });
-        showToast(`🔍 Simulated check complete for "${query}"!`);
+        showToast(`Simulated check complete for "${query}"!`);
       }, 600);
     });
   }
