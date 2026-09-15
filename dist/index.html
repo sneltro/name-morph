@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NameMorph — Username Generator, Checker & Tweaker</title>
+  <meta name="description" content="Generate fresh handles, check handle availability, and customize variations with leet speak, letter swaps, affixes, and styling.">
+  <script type="module" crossorigin src="/assets/index-DCMOrtkK.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-DtjIEh7c.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="logo-wrap">
+        <div class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m18 16 4-4-4-4"/>
+            <path d="m6 8-4 4 4 4"/>
+            <path d="m14.5 4-5 16"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1>NameMorph <span class="version-badge">v2.0</span></h1>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-open-favorites" class="btn-favorites-toggle" title="View saved names">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span>Saved</span>
+          <span id="fav-count-badge" class="fav-badge">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Subcategory Navigation -->
+  <nav class="subcat-nav-bar" aria-label="Tool subcategories">
+    <div class="subcat-nav-inner">
+      <button id="nav-btn-generator" class="subcat-nav-btn active" data-tab="generator">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>
+        </svg>
+        <span class="subcat-nav-label">Username Generator</span>
+        <span class="subcat-badge badge-new">New</span>
+      </button>
+
+      <button id="nav-btn-checker" class="subcat-nav-btn" data-tab="checker">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+        <span class="subcat-nav-label">Username Checker</span>
+        <span class="subcat-badge badge-stub">Coming Soon</span>
+      </button>
+
+      <button id="nav-btn-tweaker" class="subcat-nav-btn" data-tab="tweaker">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span class="subcat-nav-label">Username Tweaker</span>
+        <span class="subcat-badge badge-morph">Morph</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ======================================================================= -->
+  <!-- SUBCATEGORY 1: USERNAME GENERATOR (NEW)                                  -->
+  <!-- ======================================================================= -->
+  <section id="view-generator" class="subcat-view active">
+    <!-- Generator Hero -->
+    <div class="gen-hero">
+      <div class="gen-hero-content">
+        <h2>Generate Fresh Words & Usernames</h2>
+        <p class="gen-lead">Pronounceable syllables, typo-resistant handles, random keys, or memorable word pairs — generated securely in your browser.</p>
+      </div>
+    </div>
+
+    <div class="main-container">
+      <!-- Left Controls Sidebar -->
+      <aside class="sidebar-panel gen-controls-panel">
+        <div class="sidebar-header">
+          <div class="sidebar-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span>Generator Settings</span>
+          </div>
+          <button id="gen-btn-reset" class="btn-reset-rules" title="Reset to defaults">Reset</button>
+        </div>
+
+        <!-- 1. Generation Mode / Style -->
+        <div class="gen-section">
+          <label class="gen-section-label">Generation Mode</label>
+          <div class="gen-modes-grid" role="radiogroup" aria-label="Style mode">
+            <label class="gen-mode-chip">
+              <input type="radio" name="gen-mode" value="say" checked>
+              <div class="gen-mode-content">
+                <span class="gen-mode-title">🗣️ Easy to Say</span>
+                <span class="gen-mode-desc">Phonetic syllables</span>
+              </div>
+            </label>
+            <label class="gen-mode-chip">
+              <input type="radio" name="gen-mode" value="read">
+              <div class="gen-mode-content">
+                <span class="gen-mode-title">👀 Easy to Read</span>
+                <span class="gen-mode-desc">No 0/O/1/l lookalikes</span>
+              </div>
+            </label>
+            <label class="gen-mode-chip">
+              <input type="radio" name="gen-mode" value="memorable">
+              <div class="gen-mode-content">
+                <span class="gen-mode-title">🧠 Word Pairs</span>
+                <span class="gen-mode-desc">Adjective + Noun</span>
+              </div>
+            </label>
+            <label class="gen-mode-chip">
+              <input type="radio" name="gen-mode" value="random">
+              <div class="gen-mode-content">
+                <span class="gen-mode-title">🎲 Random</span>
+                <span class="gen-mode-desc">Letters & symbols</span>
+              </div>
+            </label>
+          </div>
+          <div id="gen-mode-hint" class="gen-hint-text">Natural, pronounceable names built from phonetic English syllables (e.g., velora, talmir).</div>
+        </div>
+
+        <!-- 2. Length Slider & Stepper -->
+        <div class="gen-section">
+          <div class="gen-slider-header">
+            <label class="gen-section-label" for="gen-length-range">Length</label>
+            <div class="gen-stepper-wrap">
+              <button type="button" id="gen-len-minus" class="gen-stepper-btn" title="Decrease length">&minus;</button>
+              <span id="gen-len-display" class="gen-stepper-val">8</span>
+              <button type="button" id="gen-len-plus" class="gen-stepper-btn" title="Increase length">+</button>
+            </div>
+          </div>
+          <div class="gen-range-row">
+            <span class="gen-range-bound">4</span>
+            <input type="range" id="gen-length-range" class="gen-range-slider" min="4" max="24" value="8" step="1">
+            <span class="gen-range-bound">24</span>
+          </div>
+        </div>
+
+        <!-- 3. Quantity / Batch Size -->
+        <div class="gen-section">
+          <label class="gen-section-label">Batch Size</label>
+          <div class="qty-pills gen-batch-pills">
+            <button type="button" class="qty-pill" data-count="4">4</button>
+            <button type="button" class="qty-pill" data-count="8">8</button>
+            <button type="button" class="qty-pill active" data-count="12">12</button>
+            <button type="button" class="qty-pill" data-count="24">24</button>
+            <button type="button" class="qty-pill" data-count="48">48</button>
+          </div>
+        </div>
+
+        <!-- 4. Character Components -->
+        <div class="gen-section">
+          <label class="gen-section-label">Character Types</label>
+          <div class="gen-toggles-grid">
+            <label class="checkbox-label">
+              <input type="checkbox" id="gen-opt-lowercase" checked>
+              <span>Lowercase</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="gen-opt-uppercase">
+              <span>Uppercase</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="gen-opt-numbers">
+              <span>Numbers</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="gen-opt-symbols">
+              <span>Symbols (- _ .)</span>
+            </label>
+          </div>
+
+          <!-- Extra number controls when Numbers is enabled -->
+          <div id="gen-number-settings" class="gen-sub-settings" style="display: none;">
+            <div class="gen-input-row">
+              <label class="gen-mini-label" for="gen-number-placement">Number Position</label>
+              <select id="gen-number-placement" class="sort-select">
+                <option value="end" selected>End (handle27)</option>
+                <option value="start">Start (27handle)</option>
+                <option value="anywhere">Anywhere (han27dle)</option>
+              </select>
+            </div>
+            <div class="gen-input-row">
+              <label class="gen-mini-label" for="gen-digit-count">Digit Count</label>
+              <select id="gen-digit-count" class="sort-select">
+                <option value="1">1 digit</option>
+                <option value="2" selected>2 digits</option>
+                <option value="3">3 digits</option>
+                <option value="4">4 digits (e.g. year)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Capitalization Style -->
+        <div class="gen-section">
+          <label class="gen-section-label" for="gen-opt-casing">Capitalization</label>
+          <select id="gen-opt-casing" class="sort-select" style="width: 100%;">
+            <option value="none" selected>none (lowercase)</option>
+            <option value="first">First letter capitalized (SwiftBlade)</option>
+            <option value="camel">camelCase (swiftBlade)</option>
+            <option value="uppercase">ALL CAPS (SWIFTBLADE)</option>
+          </select>
+        </div>
+
+        <!-- 6. Advanced Settings Collapsible -->
+        <details class="gen-advanced-box">
+          <summary class="gen-advanced-summary">
+            <span>⚙️ Advanced Filters & Affixes</span>
+          </summary>
+          <div class="gen-advanced-body">
+            <div class="gen-adv-field">
+              <label for="gen-adv-prefix">Prefix</label>
+              <input type="text" id="gen-adv-prefix" placeholder="e.g. neo_, pro" maxlength="12" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="gen-adv-field">
+              <label for="gen-adv-suffix">Suffix</label>
+              <input type="text" id="gen-adv-suffix" placeholder="e.g. _hq, gg" maxlength="12" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="gen-adv-field">
+              <label for="gen-adv-keyword">Keyword</label>
+              <input type="text" id="gen-adv-keyword" placeholder="e.g. dev, cat" maxlength="16" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="gen-adv-field">
+              <label for="gen-adv-keyword-pos">Keyword Placement</label>
+              <select id="gen-adv-keyword-pos" class="sort-select">
+                <option value="start" selected>Start</option>
+                <option value="end">End</option>
+              </select>
+            </div>
+            <div class="gen-adv-field">
+              <label for="gen-adv-separator">Separator</label>
+              <select id="gen-adv-separator" class="sort-select">
+                <option value="" selected>None</option>
+                <option value="-">Hyphen (-)</option>
+                <option value="_">Underscore (_)</option>
+                <option value=".">Dot (.)</option>
+              </select>
+            </div>
+            <div class="gen-adv-field">
+              <label for="gen-adv-exclude">Exclude Characters</label>
+              <input type="text" id="gen-adv-exclude" placeholder="e.g. qxz" maxlength="20" autocomplete="off" spellcheck="false">
+            </div>
+            <div class="gen-adv-toggles">
+              <label class="checkbox-label">
+                <input type="checkbox" id="gen-adv-start-letter" checked>
+                <span>Must start with a letter</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="gen-adv-avoid-repeats">
+                <span>Avoid repeated characters</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="gen-adv-leetspeak">
+                <span>Light leetspeak (4 for a, 3 for e)</span>
+              </label>
+            </div>
+          </div>
+        </details>
+
+        <!-- Primary Generation Trigger -->
+        <div class="gen-actions-box">
+          <button id="gen-btn-generate" class="btn-primary gen-btn-main" title="Generate words">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+              <path d="M16 21h5v-5"/>
+            </svg>
+            <span>Generate Names</span>
+          </button>
+          <button id="gen-btn-surprise" class="btn-secondary gen-btn-surprise" title="Random settings & roll">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/>
+              <path d="m18 2 4 4-4 4"/>
+              <path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/>
+              <path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/>
+              <path d="m18 14 4 4-4 4"/>
+            </svg>
+            <span>Surprise Me</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Right Results Panel -->
+      <section class="results-panel">
+        <div class="results-toolbar">
+          <div class="results-stats" id="gen-results-stats">
+            Showing <strong id="gen-stats-count">0</strong> generated names
+          </div>
+
+          <div class="toolbar-actions">
+            <select id="gen-select-sort" class="sort-select" title="Sort names">
+              <option value="random">🎲 Random</option>
+              <option value="shortest">⚡ Shortest First</option>
+              <option value="longest">📏 Longest First</option>
+              <option value="alpha">🔤 A to Z</option>
+            </select>
+            <input 
+              type="text" 
+              id="gen-search-filter" 
+              class="search-filter-input" 
+              placeholder="Filter names..." 
+              autocomplete="off"
+            >
+            <button id="gen-btn-copy-all" class="btn-tool" title="Copy all currently shown names">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+              </svg>
+              <span>Copy All</span>
+            </button>
+            <button id="gen-btn-export-txt" class="btn-tool" title="Download as TXT file">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" x2="12" y1="15" y2="3"/>
+              </svg>
+              <span>Export TXT</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Generated Names Grid -->
+        <div class="cards-grid" id="gen-cards-grid">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Load More / Next Batch -->
+        <div class="load-more-container" id="gen-load-more-container">
+          <button id="gen-btn-load-more" class="btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14"/>
+              <path d="M5 12h14"/>
+            </svg>
+            <span>Roll Another Batch</span>
+          </button>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <!-- ======================================================================= -->
+  <!-- SUBCATEGORY 2: USERNAME CHECKER (STUB - COMING SOON)                     -->
+  <!-- ======================================================================= -->
+  <section id="view-checker" class="subcat-view" style="display: none;">
+    <div class="checker-container">
+      <div class="checker-hero">
+        <div class="checker-badge-pill">
+          <span class="pulse-dot"></span>
+          <span>In Active Development · Coming Soon</span>
+        </div>
+        <h2>Multi-Platform Username Availability Checker</h2>
+        <p class="checker-lead">
+          Soon you'll be able to check real-time handle availability across 10+ major developer, gaming, and creator networks simultaneously.
+        </p>
+
+        <!-- Interactive Search Mockup -->
+        <div class="checker-search-card">
+          <div class="checker-input-wrap">
+            <svg class="checker-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input 
+              type="text" 
+              id="checker-mock-input" 
+              class="checker-input" 
+              placeholder="Type a username to simulate multi-platform availability..."
+              value="nexus"
+              autocomplete="off"
+            >
+            <button id="btn-checker-simulate" class="btn-primary checker-check-btn">
+              <span>Simulate Check</span>
+            </button>
+          </div>
+          <p class="checker-privacy-note">
+            🛡️ <strong>Zero-Sniping Guarantee:</strong> NameMorph will never log, store, or front-run searched handles. All checks will run via decentralized client-safe proxies.
+          </p>
+        </div>
+      </div>
+
+      <!-- Simulated Platform Availability Grid -->
+      <div class="checker-grid-section">
+        <h3 class="checker-section-title">Supported Target Platforms</h3>
+        <div class="platform-grid" id="platform-grid">
+          <!-- Platform 1 -->
+          <div class="platform-card">
+            <div class="platform-head">
+              <span class="platform-icon">🐙</span>
+              <div>
+                <h4 class="platform-name">GitHub</h4>
+                <span class="platform-url">github.com/{handle}</span>
+              </div>
+            </div>
+            <div class="platform-status-badge status-simulated">
+              <span class="status-indicator"></span>
+              <span class="status-text">Preview Ready</span>
+            </div>
+          </div>
+
+          <!-- Platform 2 -->
+          <div class="platform-card">
+            <div class="platform-head">
+              <span class="platform-icon">𝕏</span>
+              <div>
+                <h4 class="platform-name">X (Twitter)</h4>
+                <span class="platform-url">x.com/{handle}</span>
+              </div>
+            </div>
+            <div class="platform-status-badge status-simulated">
+              <span class="status-indicator"></span>
+              <span class="status-text">Preview Ready</span>
+            </div>
+          </div>
+
+          <!-- Platform 3 -->
+          <div class="platform-card">
+            <div class="platform-head">
+              <span class="platform-icon">🎮</span>
+              <div>
+                <h4 class="platform-name">Discord</h4>
+                <span class="platform-url">discord.com</span>
+              </div>
+            </div>
+            <div class="platform-status-badge status-simulated">
+              <span class="status-indicator"></span>
+              <span class="status-text">Preview Ready</span>
+            </div>
+          </div>
+
+          <!-- Platform 4 -->
+          <div class="platform-card">
+            <div class="platform-head">
+              <span class="platform-icon">🟣</span>
+              <div>
+                <h4 class="platform-name">Twitch</h4>
+                <span class="platform-url">twitch.tv/{handle}</span>
+              </div>
+            </div>
+            <div class="platform-status-badge status-simulated">
+              <span class="status-indicator"></span>
+              <span class="status-text">Preview Ready</span>
+            </div>
+          </div>
+
+          <!-- Platform 5 -->
+          <div class="platform-card">
+            <div class="platform-head">
+              <span class="platform-icon">▶️</span>
+              <div>
+                <h4 class="platform-name">YouTube</h4>
+                <span class="platform-url">youtube.com/@{handle}</span>
+              </div>
+            </div>
+            <div class="platform-status-badge status-simulated">
+              <span class="status-indicator"></span>
+              <span class="status-text">Preview Ready</span>
+            </div>
+          </div>
+
+          <!-- Platform 6 -->
+          <div class="platform-card">
+            <div class="platform-head">
+              <span class="platform-icon">🟠</span>
+              <div>
+                <h4 class="platform-name">Reddit</h4>
+                <span class="platform-url">reddit.com/user/{handle}</span>
+              </div>
+            </div>
+            <div class="platform-status-badge status-simulated">
+              <span class="status-indicator"></span>
+              <span class="status-text">Preview Ready</span>
+            </div>
+          </div>
+
+          <!-- Platform 7 -->
+          <div class="platform-card">
+            <div class="platform-head">
+              <span class="platform-icon">📸</span>
+              <div>
+                <h4 class="platform-name">Instagram</h4>
+                <span class="platform-url">instagram.com/{handle}</span>
+              </div>
+            </div>
+            <div class="platform-status-badge status-simulated">
+              <span class="status-indicator"></span>
+              <span class="status-text">Preview Ready</span>
+            </div>
+          </div>
+
+          <!-- Platform 8 -->
+          <div class="platform-card">
+            <div class="platform-head">
+              <span class="platform-icon">🎵</span>
+              <div>
+                <h4 class="platform-name">TikTok</h4>
+                <span class="platform-url">tiktok.com/@{handle}</span>
+              </div>
+            </div>
+            <div class="platform-status-badge status-simulated">
+              <span class="status-indicator"></span>
+              <span class="status-text">Preview Ready</span>
+            </div>
+          </div>
+
+          <!-- Platform 9 -->
+          <div class="platform-card">
+            <div class="platform-head">
+              <span class="platform-icon">💨</span>
+              <div>
+                <h4 class="platform-name">Steam</h4>
+                <span class="platform-url">steamcommunity.com/id/{handle}</span>
+              </div>
+            </div>
+            <div class="platform-status-badge status-simulated">
+              <span class="status-indicator"></span>
+              <span class="status-text">Preview Ready</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Callout Banner -->
+        <div class="checker-notice-box">
+          <div class="checker-notice-left">
+            <h4>Want to find a unique name right now?</h4>
+            <p>Use the brand new <strong>Username Generator</strong> to invent fresh words or the <strong>Username Tweaker</strong> to morph your favorite handle.</p>
+          </div>
+          <div class="checker-notice-actions">
+            <button id="btn-checker-goto-gen" class="btn-primary">Go to Generator</button>
+            <button id="btn-checker-goto-tweak" class="btn-secondary">Go to Tweaker</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================================= -->
+  <!-- SUBCATEGORY 3: USERNAME TWEAKER (CURRENT NAMEMORPH FUNCTIONALITY)       -->
+  <!-- ======================================================================= -->
+  <section id="view-tweaker" class="subcat-view" style="display: none;">
+    <!-- Tweaker Hero Section -->
+    <div class="hero-section">
+      <div class="hero-card">
+        <div class="input-row">
+          <div class="input-wrapper">
+            <input 
+              type="text" 
+              id="input-word" 
+              class="input-main" 
+              placeholder="Type a username or brand (e.g., nexus, echo, pixel)..."
+              value="nexus"
+              autocomplete="off"
+              spellcheck="false"
+            >
+            <button id="btn-clear-input" class="input-clear-btn" title="Clear input">✕</button>
+          </div>
+
+          <!-- Quantity Control -->
+          <div class="qty-group">
+            <span class="qty-label">Quantity:</span>
+            <div class="qty-pills">
+              <button class="qty-pill" data-qty="20">20</button>
+              <button class="qty-pill active" data-qty="50">50</button>
+              <button class="qty-pill" data-qty="100">100</button>
+              <button class="qty-pill" data-qty="200">200</button>
+            </div>
+            <input type="number" id="input-custom-qty" class="qty-custom-input" min="5" max="500" value="50" title="Custom quantity">
+          </div>
+
+          <!-- Generate Buttons -->
+          <button id="btn-generate" class="btn-primary" title="Generate variations now">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+              <path d="M16 21h5v-5"/>
+            </svg>
+            <span>Morph Word</span>
+          </button>
+
+          <button id="btn-shuffle" class="btn-secondary" title="Randomize word or sample another">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/>
+              <path d="m18 2 4 4-4 4"/>
+              <path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/>
+              <path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/>
+              <path d="m18 14 4 4-4 4"/>
+            </svg>
+            <span>Surprise Word</span>
+          </button>
+        </div>
+
+        <!-- Quick Presets -->
+        <div class="presets-container">
+          <span class="presets-label">Presets:</span>
+          <div class="presets-list" id="presets-list">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tweaker Workspace -->
+    <div class="main-container">
+      
+      <!-- Left Configuration Sidebar -->
+      <aside class="sidebar-panel">
+        <div class="sidebar-header">
+          <div class="sidebar-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4" x2="4" y1="21" y2="14"/>
+              <line x1="4" x2="4" y1="10" y2="3"/>
+              <line x1="12" x2="12" y1="21" y2="12"/>
+              <line x1="12" x2="12" y1="8" y2="3"/>
+              <line x1="20" x2="20" y1="21" y2="16"/>
+              <line x1="20" x2="20" y1="12" y2="3"/>
+              <line x1="1" x2="7" y1="14" y2="14"/>
+              <line x1="9" x2="15" y1="8" y2="8"/>
+              <line x1="17" x2="23" y1="16" y2="16"/>
+            </svg>
+            <span>Mutation Rules</span>
+          </div>
+          <button id="btn-reset-rules" class="btn-reset-rules">Reset</button>
+        </div>
+
+        <!-- 1. LEET SPEAK -->
+        <div class="rule-group" id="group-leet">
+          <div class="rule-group-header">
+            <div class="rule-group-title">
+              <span>🔢 Leet Speak</span>
+              <span class="rule-group-badge">Numbers</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-enable-leet" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="rule-sub-options" id="sub-options-leet">
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-leet-subtle" checked>
+              <span>Subtle leet (1-2 numbers, e.g. n3xus)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-leet-full" checked>
+              <span>Full leet (all digits, e.g. n3xu5)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-leet-symbols" checked>
+              <span>Symbols (@ for a, $ for s, ! for i)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 2. LETTER REPLACEMENTS -->
+        <div class="rule-group" id="group-letter-swaps">
+          <div class="rule-group-header">
+            <div class="rule-group-title">
+              <span>🔤 Letter Replacements</span>
+              <span class="rule-group-badge">Alphabetical</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-enable-letter-swaps" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="rule-sub-options" id="sub-options-letter-swaps">
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-swaps-phonetic" checked>
+              <span>Phonetic swaps (c↔k, ph↔f, z↔s, x↔ks)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-swaps-typos" checked>
+              <span>QWERTY typos (adjacent key swaps)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 3. PREFIXES -->
+        <div class="rule-group" id="group-prefixes">
+          <div class="rule-group-header">
+            <div class="rule-group-title">
+              <span>➕ Prefixes</span>
+              <span class="rule-group-badge">Prepend</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-enable-prefixes" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="rule-sub-options" id="sub-options-prefixes">
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-prefix-tech" checked>
+              <span>Tech & SaaS (get, open, hyper, meta)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-prefix-gaming" checked>
+              <span>Gaming & Pro (pro, lord, shadow, dr)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-prefix-social" checked>
+              <span>Social & Creator (the, real, its, iam)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 4. SUFFIXES -->
+        <div class="rule-group" id="group-suffixes">
+          <div class="rule-group-header">
+            <div class="rule-group-title">
+              <span>🏷️ Suffixes</span>
+              <span class="rule-group-badge">Append</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-enable-suffixes" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="rule-sub-options" id="sub-options-suffixes">
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-suffix-startup" checked>
+              <span>Startup & App (ify, ly, io, hq, lab, ai)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-suffix-gaming" checked>
+              <span>Gaming & Media (gg, tv, plays, live, zone)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-suffix-social" checked>
+              <span>Creator & Dev (dev, design, official)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 5. VOWEL MODIFICATIONS -->
+        <div class="rule-group" id="group-vowels">
+          <div class="rule-group-header">
+            <div class="rule-group-title">
+              <span>🅰️ Vowel Modifications</span>
+              <span class="rule-group-badge">Vowels</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-enable-vowels" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="rule-sub-options" id="sub-options-vowels">
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-vowels-drop" checked>
+              <span>Drop vowels (Tumblr/Flickr: nexus→nxs)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-vowels-double" checked>
+              <span>Double vowels (ee, oo, aa)</span>
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-vowels-swap" checked>
+              <span>Vowel shift (a↔e, o↔u, i↔y)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 6. EXTENSIONS & LETTER REPETITION -->
+        <div class="rule-group" id="group-extensions">
+          <div class="rule-group-header">
+            <div class="rule-group-title">
+              <span>🔂 Letter Extensions</span>
+              <span class="rule-group-badge">Repeat</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-enable-extensions" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 7. FRAMING & GAMER TAGS -->
+        <div class="rule-group" id="group-framing">
+          <div class="rule-group-header">
+            <div class="rule-group-title">
+              <span>✨ Gamer Framing & Delimiters</span>
+              <span class="rule-group-badge">Tags</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-enable-framing" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="rule-sub-options" id="sub-options-framing">
+            <label class="checkbox-label">
+              <input type="checkbox" id="check-affix-delimiters" checked>
+              <span>Include delimiters in affixes (_name, -hq)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 8. CASING STYLES -->
+        <div class="rule-group" id="group-casing">
+          <div class="rule-group-header">
+            <div class="rule-group-title">
+              <span>🔠 Stylized Casing</span>
+              <span class="rule-group-badge">Case</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-enable-casing" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- Right Tweaker Results Panel -->
+      <section class="results-panel">
+        <div class="results-toolbar">
+          <div class="results-stats" id="results-stats">
+            Showing <strong id="stats-count">0</strong> variations for <strong id="stats-word">"..."</strong>
+          </div>
+
+          <div class="toolbar-actions">
+            <select id="select-sort" class="sort-select" title="Sort / Shuffle Variations">
+              <option value="random">🎲 Random (Fresh)</option>
+              <option value="shortest">⚡ Shortest First</option>
+              <option value="longest">📏 Longest First</option>
+              <option value="alpha">🔤 A to Z</option>
+            </select>
+            <input 
+              type="text" 
+              id="search-filter" 
+              class="search-filter-input" 
+              placeholder="Filter results..."
+              autocomplete="off"
+            >
+            <button id="btn-copy-all" class="btn-tool" title="Copy all currently shown names to clipboard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+              </svg>
+              <span>Copy All</span>
+            </button>
+            <button id="btn-export-txt" class="btn-tool" title="Download names as a text file">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" x2="12" y1="15" y2="3"/>
+              </svg>
+              <span>Export TXT</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Card Grid Container -->
+        <div class="cards-grid" id="cards-grid">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Load More / Next Batch -->
+        <div class="load-more-container" id="load-more-container" style="display: none;">
+          <button id="btn-load-more" class="btn-secondary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14"/>
+              <path d="M5 12h14"/>
+            </svg>
+            <span id="load-more-text">Load Next Batch</span>
+          </button>
+        </div>
+      </section>
+
+    </div>
+  </section>
+
+  <!-- Offcanvas Saved Favorites Drawer -->
+  <div id="drawer-backdrop" class="drawer-backdrop"></div>
+  <aside id="favorites-drawer" class="favorites-drawer">
+    <div class="drawer-header">
+      <div class="drawer-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" stroke-width="1.5">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        <span>Saved Names (<span id="drawer-fav-count">0</span>)</span>
+      </div>
+      <button id="btn-close-drawer" class="btn-drawer-close">✕</button>
+    </div>
+    <div class="drawer-body" id="drawer-favorites-list">
+      <!-- Populated dynamically -->
+    </div>
+    <div class="drawer-footer">
+      <button id="btn-copy-favorites" class="btn-tool" style="flex: 1;">Copy All Saved</button>
+      <button id="btn-clear-favorites" class="btn-tool" style="color: var(--danger);">Clear</button>
+    </div>
+  </aside>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+</body>
+</html>

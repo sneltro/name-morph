@@ -1,0 +1,45 @@
+# NameMorph
+
+> Client-side customizable username and brand name variation generator built with Vanilla JS and Vite.
+
+## Project Overview
+NameMorph is a comprehensive client-side username suite organized into three subcategories:
+1. **Username Generator**: Generates brand new words and handles from scratch across 4 modes (Easy to Say phonotactic syllables, Easy to Read unambiguous characters, Random charset generation, and Memorable curated adjective+noun pairs) with rich length, count, and affix controls.
+2. **Username Checker (Stub)**: Showcase UI for upcoming real-time handle availability checking across 10+ platforms (GitHub, X, Twitch, Discord, YouTube, Reddit, Instagram, TikTok, Steam).
+3. **Username Tweaker**: The core NameMorph variation generator taking a root word and generating customizable mutations (leet speak, phonetic/typo letter swaps, affixes, vowel alterations, letter repeating, gamer framing, and casing styles).
+
+## Tech Stack & Commands
+- **Runtime & Bundler**: Vite 6, ES Modules (vanilla JavaScript, no frontend framework)
+- **Styling**: Vanilla CSS (`src/style.css`), dark mode UI with responsive grid
+- **Persistence**: Browser `localStorage` (`namemorph_favorites_v1`)
+- **Commands**:
+  - `npm run dev`: Start local development server
+  - `npm run build`: Build production assets to `dist/`
+  - `npm run preview`: Locally preview production build
+
+## Architecture & Directory Layout
+```
+├── index.html              # 3-subcategory layout (Generator, Checker stub, Tweaker) & drawer
+├── vite.config.js          # Vite configuration
+├── src/
+│   ├── main.js             # UI orchestrator, subcategory router, reactive state & rendering
+│   ├── storage.js          # LocalStorage CRUD for shared saved favorites
+│   ├── style.css           # Responsive stylesheet (subcat tabs, generator, checker stub, tweaker)
+│   ├── generator/          # Standalone word & handle generation engine
+│   │   ├── generatorEngine.js # Say, Read, Random, Memorable algorithms & decorators
+│   │   └── dictionaries.js    # Syllable inventories, word banks, blocked terms
+│   └── transforms/         # Tweaker mutation rule modules & variation engine
+│       ├── engine.js       # Master Tweaker variation coordinator
+│       ├── presets.js      # Configuration presets (All, Brand/SaaS, Gamer, Swaps Only, etc.)
+│       ├── affixes.js      # Tech/gaming/social prefixes & suffixes + delimiter support
+│       ├── decorations.js  # Gamer framing (xX_..._Xx), letter repeating, casing styles
+│       ├── leet.js         # Numbers & symbols leet substitutions (subtle, full, symbols)
+│       ├── letterReplacements.js # Alphabetical phonetic swaps & QWERTY typo substitutions
+│       └── vowels.js       # Vowel dropping (Disvowel), doubling, and vowel swaps
+```
+
+## Key Architectural Invariants
+1. **Zero Backend**: All generation, filtering, sorting, and storage happen strictly client-side in the browser.
+2. **Deterministic & Pure Engines**: Functions in `src/generator/` and `src/transforms/` are pure functions returning arrays of items.
+3. **Deduplication & Safety**: Deduplication of generated results and safety checks via blocked-term filtering.
+4. **Separation of Concerns**: Standalone engines decoupled from DOM; storage isolated; `src/main.js` coordinates state and events.
