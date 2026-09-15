@@ -217,9 +217,9 @@ function readGenConfigFromUI() {
   let minVal = parseInt(elements.genLenMin.value, 10);
   let maxVal = parseInt(elements.genLenMax.value, 10);
   if (isNaN(minVal) || minVal < 3) minVal = 3;
-  if (minVal > 32) minVal = 32;
+  if (minVal > 25) minVal = 25;
   if (isNaN(maxVal) || maxVal < 3) maxVal = 3;
-  if (maxVal > 32) maxVal = 32;
+  if (maxVal > 25) maxVal = 25;
   if (minVal > maxVal) minVal = maxVal;
   genState.config.minLength = minVal;
   genState.config.maxLength = maxVal;
@@ -352,7 +352,7 @@ function applyGenFilter() {
 }
 
 // Reusable SVG for GitHub icon
-const GITHUB_SVG_ICON = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>`;
+const GITHUB_SVG_ICON = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>`;
 
 function renderGenResults() {
   elements.genStatsCount.textContent = genState.filteredResults.length;
@@ -379,84 +379,138 @@ function renderGenResults() {
   for (const item of genState.filteredResults) {
     const card = document.createElement('div');
     card.className = 'name-card card-enter';
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
     const favorited = isFavorite(item.text);
 
     card.innerHTML = `
-      <div class="card-top">
-        <span class="card-text" title="${item.text}">${item.text}</span>
-      </div>
-      <div class="card-bottom">
-        <div class="card-actions">
-          <button class="btn-card-icon btn-card-copy" title="Copy to clipboard">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-            </svg>
-          </button>
-          <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="Save to favorites">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-            </svg>
-          </button>
-        </div>
-        <div class="card-checker">
-          <a class="btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X">X</a>
-          <a class="btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
-          <button class="btn-check-link btn-card-tweak" title="Morph variations in Tweaker">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px;">
-              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-            Tweak
-          </button>
-        </div>
+      <span class="card-text" title="${item.text}">${item.text}</span>
+      <div class="card-actions">
+        <button class="btn-card-icon btn-card-copy" title="Copy to clipboard" aria-label="Copy to clipboard">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+          </svg>
+        </button>
+        <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="${favorited ? 'Remove from favorites' : 'Save to favorites'}" aria-label="Save to favorites">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="${favorited ? '#fbbf24' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </button>
+        <button class="btn-card-icon btn-card-tweak" title="Morph in Tweaker" aria-label="Morph in Tweaker">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+        <a class="btn-card-icon btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X" aria-label="Check on X">X</a>
+        <a class="btn-card-icon btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
       </div>
     `;
 
-    // Copy action
     const btnCopy = card.querySelector('.btn-card-copy');
-    btnCopy.addEventListener('click', () => {
+
+    function copyName() {
       navigator.clipboard.writeText(item.text).then(() => {
-        btnCopy.classList.add('copied');
-        btnCopy.innerHTML = `
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        `;
-        showToast(`Copied "${item.text}" to clipboard`);
-        setTimeout(() => {
-          btnCopy.classList.remove('copied');
+        card.classList.add('card-copied');
+        if (btnCopy) {
+          btnCopy.classList.add('copied');
           btnCopy.innerHTML = `
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
             </svg>
           `;
-        }, 1500);
+        }
+        showToast(`Copied "${item.text}" to clipboard`);
+        setTimeout(() => {
+          card.classList.remove('card-copied');
+          if (btnCopy) {
+            btnCopy.classList.remove('copied');
+            btnCopy.innerHTML = `
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+              </svg>
+            `;
+          }
+        }, 1200);
       });
+    }
+
+    // Card click: pins action buttons so they stay visible even when not hovering, and copies name
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.card-actions')) return;
+      document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
+        if (c !== card) c.classList.remove('actions-pinned');
+      });
+      card.classList.add('actions-pinned');
+      copyName();
     });
+
+    // Double-click copies immediately
+    card.addEventListener('dblclick', (e) => {
+      if (e.target.closest('.card-actions')) return;
+      copyName();
+    });
+
+    // Keyboard support: Enter / Space to pin actions & copy
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (!e.target.closest('.card-actions')) {
+          e.preventDefault();
+          document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
+            if (c !== card) c.classList.remove('actions-pinned');
+          });
+          card.classList.add('actions-pinned');
+          copyName();
+        }
+      }
+    });
+
+    // Copy button
+    if (btnCopy) {
+      btnCopy.addEventListener('click', (e) => {
+        e.stopPropagation();
+        copyName();
+      });
+    }
 
     // Favorite action
     const btnFav = card.querySelector('.btn-card-fav');
-    btnFav.addEventListener('click', () => {
+    btnFav.addEventListener('click', (e) => {
+      e.stopPropagation();
       if (isFavorite(item.text)) {
         removeFavorite(item.text);
         btnFav.classList.remove('active-favorite');
-        btnFav.querySelector('svg').setAttribute('fill', 'none');
+        btnFav.title = 'Save to favorites';
+        const svg = btnFav.querySelector('svg');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
         showToast(`Removed "${item.text}" from saved`);
       } else {
-        saveFavorite({ text: item.text, rule: item.tags[0] || item.rule, tags: item.tags });
+        saveFavorite({ text: item.text, rule: (item.tags && item.tags[0]) || item.rule || 'Generated', tags: item.tags });
         btnFav.classList.add('active-favorite');
-        btnFav.querySelector('svg').setAttribute('fill', '#fbbf24');
+        btnFav.title = 'Remove from favorites';
+        const svg = btnFav.querySelector('svg');
+        svg.setAttribute('fill', '#fbbf24');
+        svg.setAttribute('stroke', '#fbbf24');
         showToast(`Saved "${item.text}" to favorites`);
       }
       updateFavoritesUI();
     });
 
-    // Tweak action (Synergy: Switch to Tweaker with this word!)
+    // Tweak action
     const btnTweak = card.querySelector('.btn-card-tweak');
-    btnTweak.addEventListener('click', () => {
+    btnTweak.addEventListener('click', (e) => {
+      e.stopPropagation();
       tweakGeneratedName(item.text);
+    });
+
+
+
+    // Social links propagation guard
+    card.querySelectorAll('.btn-check-link').forEach(link => {
+      link.addEventListener('click', (e) => e.stopPropagation());
     });
 
     fragment.appendChild(card);
@@ -689,81 +743,140 @@ function renderResults() {
   for (const item of tweakerState.filteredResults) {
     const card = document.createElement('div');
     card.className = 'name-card card-enter';
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
     const favorited = isFavorite(item.text);
 
-    let tagClass = 'tag-pill';
-    const firstTag = (item.tags && item.tags[0]) || item.rule || '';
-    if (firstTag.includes('Leet')) tagClass += ' tag-leet';
-    else if (firstTag.includes('Letter') || firstTag.includes('Phonetic') || firstTag.includes('Typo')) tagClass += ' tag-letter';
-    else if (firstTag.includes('Prefix')) tagClass += ' tag-prefix';
-    else if (firstTag.includes('Suffix')) tagClass += ' tag-suffix';
-    else if (firstTag.includes('Vowel')) tagClass += ' tag-vowel';
-
     card.innerHTML = `
-      <div class="card-top">
-        <span class="card-text" title="${item.text}">${item.text}</span>
-      </div>
-      <div class="card-bottom">
-        <div class="card-bottom-left">
-          <div class="card-actions">
-            <button class="btn-card-icon btn-card-copy" title="Copy to clipboard">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-              </svg>
-            </button>
-            <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="Save to favorites">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
-            </button>
-          </div>
-          <span class="${tagClass}">${item.tags && item.tags[1] ? item.tags[1] : item.rule}</span>
-        </div>
-        <div class="card-checker">
-          <span class="card-length">${item.text.length} chars</span>
-          <a class="btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X">X</a>
-          <a class="btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
-        </div>
+      <span class="card-text" title="${item.text}${item.rule ? ' (' + item.rule + ')' : ''}">${item.text}</span>
+      <div class="card-actions">
+        <button class="btn-card-icon btn-card-copy" title="Copy to clipboard" aria-label="Copy to clipboard">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+          </svg>
+        </button>
+        <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="${favorited ? 'Remove from favorites' : 'Save to favorites'}" aria-label="Save to favorites">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="${favorited ? '#fbbf24' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </button>
+        <button class="btn-card-icon btn-card-tweak" title="Morph in Tweaker" aria-label="Morph in Tweaker">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+        <a class="btn-card-icon btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X" aria-label="Check on X">X</a>
+        <a class="btn-card-icon btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
       </div>
     `;
 
     const btnCopy = card.querySelector('.btn-card-copy');
-    btnCopy.addEventListener('click', () => {
+
+    function copyName() {
       navigator.clipboard.writeText(item.text).then(() => {
-        btnCopy.classList.add('copied');
-        btnCopy.innerHTML = `
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        `;
-        showToast(`Copied "${item.text}" to clipboard`);
-        setTimeout(() => {
-          btnCopy.classList.remove('copied');
+        card.classList.add('card-copied');
+        if (btnCopy) {
+          btnCopy.classList.add('copied');
           btnCopy.innerHTML = `
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
             </svg>
           `;
-        }, 1500);
+        }
+        showToast(`Copied "${item.text}" to clipboard`);
+        setTimeout(() => {
+          card.classList.remove('card-copied');
+          if (btnCopy) {
+            btnCopy.classList.remove('copied');
+            btnCopy.innerHTML = `
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+              </svg>
+            `;
+          }
+        }, 1200);
       });
+    }
+
+    // Card click: pins action buttons so they stay visible even when not hovering, and copies name
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.card-actions')) return;
+      document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
+        if (c !== card) c.classList.remove('actions-pinned');
+      });
+      card.classList.add('actions-pinned');
+      copyName();
     });
 
+    // Double-click copies immediately
+    card.addEventListener('dblclick', (e) => {
+      if (e.target.closest('.card-actions')) return;
+      copyName();
+    });
+
+    // Keyboard support: Enter / Space to pin actions & copy
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (!e.target.closest('.card-actions')) {
+          e.preventDefault();
+          document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
+            if (c !== card) c.classList.remove('actions-pinned');
+          });
+          card.classList.add('actions-pinned');
+          copyName();
+        }
+      }
+    });
+
+    // Copy button
+    if (btnCopy) {
+      btnCopy.addEventListener('click', (e) => {
+        e.stopPropagation();
+        copyName();
+      });
+    }
+
+    // Favorite action
     const btnFav = card.querySelector('.btn-card-fav');
-    btnFav.addEventListener('click', () => {
+    btnFav.addEventListener('click', (e) => {
+      e.stopPropagation();
       if (isFavorite(item.text)) {
         removeFavorite(item.text);
         btnFav.classList.remove('active-favorite');
-        btnFav.querySelector('svg').setAttribute('fill', 'none');
+        btnFav.title = 'Save to favorites';
+        const svg = btnFav.querySelector('svg');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
         showToast(`Removed "${item.text}" from saved`);
       } else {
-        saveFavorite({ text: item.text, rule: item.rule, tags: item.tags });
+        saveFavorite({ text: item.text, rule: item.rule || 'Variation', tags: item.tags });
         btnFav.classList.add('active-favorite');
-        btnFav.querySelector('svg').setAttribute('fill', '#fbbf24');
+        btnFav.title = 'Remove from favorites';
+        const svg = btnFav.querySelector('svg');
+        svg.setAttribute('fill', '#fbbf24');
+        svg.setAttribute('stroke', '#fbbf24');
         showToast(`Saved "${item.text}" to favorites`);
       }
       updateFavoritesUI();
+    });
+
+    // Tweak action (morph this variation)
+    const btnTweak = card.querySelector('.btn-card-tweak');
+    btnTweak.addEventListener('click', (e) => {
+      e.stopPropagation();
+      elements.inputWord.value = item.text;
+      generate({ isUserAction: true });
+      showToast(`Loaded "${item.text}" into Tweaker!`);
+    });
+
+
+
+    // Social links propagation guard
+    card.querySelectorAll('.btn-check-link').forEach(link => {
+      link.addEventListener('click', (e) => e.stopPropagation());
     });
 
     fragment.appendChild(card);
@@ -844,10 +957,39 @@ function updateFavoritesUI() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Event Listeners Wiring
-// ─────────────────────────────────────────────────────────────────────────────
+// Reusable temporary feedback for tool copy buttons (e.g. Copy All)
+function triggerCopyFeedback(btn) {
+  if (!btn || btn.dataset.copying) return;
+  btn.dataset.copying = 'true';
+  const originalHTML = btn.innerHTML;
+  btn.classList.add('copied');
+  btn.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+    <span>Copied!</span>
+  `;
+  setTimeout(() => {
+    btn.classList.remove('copied');
+    btn.innerHTML = originalHTML;
+    delete btn.dataset.copying;
+  }, 1200);
+}
 
 function setupEventListeners() {
+  // Dismiss pinned card action buttons on click outside or Escape
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.name-card')) {
+      document.querySelectorAll('.name-card.actions-pinned').forEach(c => c.classList.remove('actions-pinned'));
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.name-card.actions-pinned').forEach(c => c.classList.remove('actions-pinned'));
+    }
+  });
+
   // Subcategory Navigation Tabs
   elements.subcatNavBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -898,7 +1040,7 @@ function setupEventListeners() {
     let minVal = parseInt(elements.genLenMin.value, 10);
     const maxVal = parseInt(elements.genLenMax.value, 10) || 10;
     if (isNaN(minVal) || minVal < 3) minVal = 3;
-    if (minVal > 32) minVal = 32;
+    if (minVal > 25) minVal = 25;
     // Check min isn't bigger than max; then it defaults to the same number as max
     if (minVal > maxVal) {
       minVal = maxVal;
@@ -911,7 +1053,7 @@ function setupEventListeners() {
   function commitMaxLength() {
     let maxVal = parseInt(elements.genLenMax.value, 10);
     const minVal = parseInt(elements.genLenMin.value, 10) || 3;
-    if (isNaN(maxVal) || maxVal > 32) maxVal = 32;
+    if (isNaN(maxVal) || maxVal > 25) maxVal = 25;
     if (maxVal < 3) maxVal = 3;
     // Vice versa: check max isn't smaller than min; then it defaults to the same number as min
     if (maxVal < minVal) {
@@ -939,7 +1081,7 @@ function setupEventListeners() {
   elements.genLenMax.addEventListener('input', () => {
     const maxVal = parseInt(elements.genLenMax.value, 10);
     const minVal = parseInt(elements.genLenMin.value, 10);
-    if (!isNaN(maxVal) && maxVal <= 32 && maxVal >= minVal) {
+    if (!isNaN(maxVal) && maxVal <= 25 && maxVal >= minVal) {
       genState.config.maxLength = maxVal;
       generateNames();
     }
@@ -1092,6 +1234,7 @@ function setupEventListeners() {
     if (genState.filteredResults.length === 0) return;
     const allText = genState.filteredResults.map(r => r.text).join('\n');
     navigator.clipboard.writeText(allText).then(() => {
+      triggerCopyFeedback(elements.genBtnCopyAll);
       showToast(`Copied ${genState.filteredResults.length} names to clipboard!`);
     });
   });
@@ -1170,6 +1313,7 @@ function setupEventListeners() {
     if (tweakerState.filteredResults.length === 0) return;
     const allText = tweakerState.filteredResults.map(r => r.text).join('\n');
     navigator.clipboard.writeText(allText).then(() => {
+      triggerCopyFeedback(elements.btnCopyAll);
       showToast(`Copied ${tweakerState.filteredResults.length} names to clipboard!`);
     });
   });
@@ -1241,6 +1385,7 @@ function setupEventListeners() {
     if (favorites.length === 0) return;
     const allText = favorites.map(f => f.text).join('\n');
     navigator.clipboard.writeText(allText).then(() => {
+      triggerCopyFeedback(elements.btnCopyFavorites);
       showToast(`Copied ${favorites.length} saved names!`);
     });
   });

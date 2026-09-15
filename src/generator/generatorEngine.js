@@ -587,8 +587,8 @@ function insertDigits(word, digits, placement) {
 
 export const DEFAULT_GENERATOR_CONFIG = {
   mode: 'say',               // 'say' | 'read' | 'random' | 'memorable'
-  minLength: 6,              // 3 to 32
-  maxLength: 10,             // 3 to 32
+  minLength: 6,              // 3 to 25
+  maxLength: 10,             // 3 to 25
   count: 12,                 // 3, 6, 9, 12, 24, 48, or custom up to 999
   lowercase: true,
   uppercase: false,
@@ -613,8 +613,8 @@ export function normalizeGeneratorOptions(rawOpts = {}) {
   let maxLen = Number(o.maxLength ?? o.length ?? 10);
   if (isNaN(minLen)) minLen = 6;
   if (isNaN(maxLen)) maxLen = 10;
-  minLen = Math.max(3, Math.min(32, minLen));
-  maxLen = Math.max(3, Math.min(32, maxLen));
+  minLen = Math.max(3, Math.min(25, minLen));
+  maxLen = Math.max(3, Math.min(25, maxLen));
   if (minLen > maxLen) {
     minLen = maxLen;
   }

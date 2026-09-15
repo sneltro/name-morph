@@ -676,143 +676,191 @@ input:checked + .slider:before {
   border-color: var(--border-medium);
 }
 
+.btn-tool.copied {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.25) !important;
+}
+
+.btn-tool.copied svg {
+  stroke: #34d399 !important;
+}
+
 /* Results Grid */
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 8px;
   align-items: stretch;
 }
 
-@media (max-width: 900px) {
-  .cards-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 580px) {
+@media (max-width: 480px) {
   .cards-grid {
     grid-template-columns: 1fr;
   }
 }
 
-/* Card Component */
+/* Card Component - Compact Single-Row Inline Layout */
 .name-card {
-  background: var(--bg-glass-card);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--border-subtle);
+  background: #131b2e;
+  border: 1px solid #1e293b;
   border-radius: var(--radius-md);
-  padding: 0.95rem 0.95rem 0.75rem;
+  min-height: 42px;
+  height: auto;
+  padding: 6px 12px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  transition: var(--transition-normal);
+  gap: 8px;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   position: relative;
   min-width: 0;
-  height: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
 }
 
-.name-card:hover {
-  transform: translateY(-2px);
-  background: var(--bg-surface-elevated);
-  border-color: var(--border-bright);
-  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.4);
+.name-card:hover,
+.name-card:focus-within,
+.name-card.actions-pinned {
+  background: #1a243b;
+  border-color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
 }
 
-.card-top {
-  display: flex;
-  align-items: flex-start;
-  width: 100%;
-  min-width: 0;
+.name-card.card-copied {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.25) !important;
+}
+
+.name-card.card-copied .card-text {
+  color: #34d399 !important;
 }
 
 .card-text {
   font-family: var(--font-sans);
-  font-size: 1.15rem;
+  font-size: 0.985rem;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.01em;
-  line-height: 1.35;
-  word-break: break-all;
-  overflow-wrap: anywhere;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: all;
+  -webkit-user-select: all;
+  cursor: pointer;
   min-width: 0;
-  width: 100%;
+  flex: 1;
+  transition: color 0.15s ease-in-out;
 }
 
+.name-card:hover .card-text {
+  color: #fff;
+}
+
+/* Action Controls (Visible on hover, focus, or when pinned by click) */
 .card-actions {
+  display: none;
+}
+
+.name-card:hover .card-actions,
+.name-card:focus-within .card-actions,
+.name-card.actions-pinned .card-actions {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   flex-shrink: 0;
+  animation: actionsFadeIn 0.15s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-.btn-card-icon {
+@keyframes actionsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Unified Action Icon Buttons */
+.btn-card-icon,
+.btn-check-link {
   background: transparent;
   border: 1px solid transparent;
   color: var(--text-muted);
-  width: 24px;
-  height: 24px;
+  width: 25px;
+  height: 25px;
   padding: 0;
   border-radius: var(--radius-sm);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: var(--transition-fast);
+  text-decoration: none;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
-.btn-card-icon svg {
+.btn-card-icon svg,
+.btn-check-link svg {
   width: 14px;
   height: 14px;
   display: block;
 }
 
-.btn-card-icon:hover {
-  background: var(--bg-surface-hover);
-  color: var(--text-primary);
-  border-color: var(--border-subtle);
+.btn-card-icon:hover,
+.btn-check-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.btn-card-icon:focus-visible,
+.btn-check-link:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 1px;
 }
 
 .btn-card-icon.active-favorite {
-  color: #fbbf24; /* Golden star */
+  color: #fbbf24;
+}
+
+.btn-card-icon.active-favorite svg {
+  fill: #fbbf24;
+  stroke: #fbbf24;
 }
 
 .btn-card-icon.copied {
   color: var(--success);
-  border-color: var(--success);
+  border-color: rgba(16, 185, 129, 0.35);
 }
 
-.card-bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  margin-top: auto;
+.btn-card-tweak:hover {
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
 }
 
-.card-bottom-left {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
+.btn-check-gh svg {
+  display: block;
 }
 
-.card-tags {
-  display: flex;
-  gap: 0.3rem;
-  flex-wrap: wrap;
-}
-
+/* Tag Pills (Subtle Neon Blue Accent) */
 .tag-pill {
   font-size: 0.65rem;
   font-weight: 700;
   padding: 2px 6px;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-secondary);
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.25);
 }
 
 .tag-pill.tag-leet {
@@ -838,50 +886,6 @@ input:checked + .slider:before {
   background: rgba(244, 63, 94, 0.15);
   color: #fda4af;
   border: 1px solid rgba(244, 63, 94, 0.25);
-}
-
-.card-length {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  color: var(--text-muted);
-}
-
-/* Card Links Dropdown / Social check */
-.card-checker {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-left: auto;
-}
-
-.btn-check-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-sans);
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-decoration: none;
-  padding: 2px 6px;
-  min-height: 20px;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.04);
-  border: none;
-  outline: none;
-  box-shadow: none;
-  cursor: pointer;
-  line-height: 1;
-  transition: var(--transition-fast);
-}
-
-.btn-check-link:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-}
-
-.btn-check-gh svg {
-  display: block;
 }
 
 /* Empty State */
@@ -1553,18 +1557,6 @@ input:checked + .slider:before {
   font-size: 0.85rem;
 }
 
-/* Tweak button on name card */
-.btn-card-tweak {
-  border: none;
-  outline: none;
-  box-shadow: none;
-  color: var(--accent-secondary);
-}
-
-.btn-card-tweak:hover {
-  color: #fff;
-  background: rgba(6, 182, 212, 0.25);
-}
 
 /* ==========================================================================
    Checker Stub Styles
