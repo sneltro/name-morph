@@ -257,12 +257,14 @@ function lengthBudget(total, n) {
   let remaining = total;
   for (let i = 0; i < n; i++) {
     const slots = n - i;
+    if (slots === 1) {
+      out.push(remaining);
+      break;
+    }
     let t = Math.round(remaining / slots);
-    if (slots > 1) {
-      const jitter = secureRandomInt(3) - 1;
-      if (t + jitter >= 2 && remaining - (t + jitter) >= 2 * (slots - 1)) {
-        t += jitter;
-      }
+    const jitter = secureRandomInt(3) - 1;
+    if (t + jitter >= 2 && remaining - (t + jitter) >= 2 * (slots - 1) && remaining - (t + jitter) <= 4 * (slots - 1)) {
+      t += jitter;
     }
     t = Math.max(2, Math.min(4, t));
     out.push(t);
@@ -272,8 +274,8 @@ function lengthBudget(total, n) {
 }
 
 function generatePronounceableWord(targetLen, excludeChars) {
-  const syllablesCount = Math.max(2, Math.min(5, Math.round(targetLen / 2.8)));
-  const budget = lengthBudget(targetLen, syllablesCount);
+  const syllablesCount = targetLen <= 3 ? 1 : Math.max(2, Math.min(Math.floor(targetLen / 2), Math.round(targetLen / 2.8)));
+  const budget = syllablesCount === 1 ? [targetLen] : lengthBudget(targetLen, syllablesCount);
 
   for (let attempt = 0; attempt < 80; attempt++) {
     const parts = [];
@@ -305,6 +307,7 @@ function generatePronounceableWord(targetLen, excludeChars) {
 
     if (!ok) continue;
     const word = parts.map(p => p.text).join('');
+    if (word.length !== targetLen) continue;
     if (!passesPhonotactics(word)) continue;
     if (excludeChars) {
       let hasExcluded = false;
@@ -504,13 +507,43 @@ function generateMemorableWord(targetLen, options) {
 // Casing & Decoration Modifiers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function applyCasing(word, style) {
+export function applyCasingByOptions(word, options = {}) {
   if (!word) return word;
-  if (style === 'uppercase') return word.toUpperCase();
-  if (style === 'first') return word.charAt(0).toUpperCase() + word.slice(1);
-  if (style === 'camel') {
-    return word.replace(/(^|[^a-zA-Z0-9])([a-zA-Z])/g, (_, boundary, letter) => boundary + letter.toUpperCase());
+
+  const hasLower = !!options.lowercase;
+  const hasUpper = !!options.uppercase;
+
+  // If only uppercase is enabled, all words are uppercase
+  if (hasUpper && !hasLower) {
+    return word.toUpperCase();
   }
+
+  // If both are enabled, each character can be either lowercase or uppercase (decided randomly)
+  if (hasLower && hasUpper) {
+    const chars = word.split('');
+    const letterIndices = [];
+    for (let i = 0; i < chars.length; i++) {
+      if (/[a-zA-Z]/.test(chars[i])) {
+        letterIndices.push(i);
+        chars[i] = (secureRandomInt(2) === 1) ? chars[i].toUpperCase() : chars[i].toLowerCase();
+      }
+    }
+    // Guarantee visible mixed case if the word has 2 or more letters and all rolled the exact same case
+    if (letterIndices.length >= 2) {
+      const allUpper = letterIndices.every(idx => chars[idx] === chars[idx].toUpperCase());
+      const allLower = letterIndices.every(idx => chars[idx] === chars[idx].toLowerCase());
+      if (allUpper) {
+        const flipIdx = letterIndices[secureRandomInt(letterIndices.length)];
+        chars[flipIdx] = chars[flipIdx].toLowerCase();
+      } else if (allLower) {
+        const flipIdx = letterIndices[secureRandomInt(letterIndices.length)];
+        chars[flipIdx] = chars[flipIdx].toUpperCase();
+      }
+    }
+    return chars.join('');
+  }
+
+  // If only lowercase is enabled (or fallback): all words are lowercase
   return word.toLowerCase();
 }
 
@@ -554,15 +587,15 @@ function insertDigits(word, digits, placement) {
 
 export const DEFAULT_GENERATOR_CONFIG = {
   mode: 'say',               // 'say' | 'read' | 'random' | 'memorable'
-  length: 8,                 // 4 to 24
-  count: 12,                 // 4, 8, 12, 24, 48
+  minLength: 6,              // 3 to 32
+  maxLength: 10,             // 3 to 32
+  count: 12,                 // 3, 6, 9, 12, 24, 48, or custom up to 999
   lowercase: true,
   uppercase: false,
   numbers: false,
   symbols: false,
   digitCount: 2,
   numberPlacement: 'end',    // 'end' | 'start' | 'anywhere'
-  capitalize: 'none',        // 'none' | 'first' | 'camel' | 'uppercase'
   prefix: '',
   suffix: '',
   keyword: '',
@@ -576,8 +609,18 @@ export const DEFAULT_GENERATOR_CONFIG = {
 
 export function normalizeGeneratorOptions(rawOpts = {}) {
   const o = { ...DEFAULT_GENERATOR_CONFIG, ...rawOpts };
-  o.length = Math.max(4, Math.min(28, Number(o.length) || 8));
-  o.count = Math.max(1, Math.min(60, Number(o.count) || 12));
+  let minLen = Number(o.minLength ?? o.length ?? 6);
+  let maxLen = Number(o.maxLength ?? o.length ?? 10);
+  if (isNaN(minLen)) minLen = 6;
+  if (isNaN(maxLen)) maxLen = 10;
+  minLen = Math.max(3, Math.min(32, minLen));
+  maxLen = Math.max(3, Math.min(32, maxLen));
+  if (minLen > maxLen) {
+    minLen = maxLen;
+  }
+  o.minLength = minLen;
+  o.maxLength = maxLen;
+  o.count = Math.max(1, Math.min(999, Number(o.count) || 12));
   o.digitCount = Math.max(1, Math.min(4, Number(o.digitCount) || 2));
   o.prefix = String(o.prefix || '').trim();
   o.suffix = String(o.suffix || '').trim();
@@ -600,15 +643,19 @@ export function generateWordBatch(rawOptions = {}) {
   let affixLen = o.prefix.length + o.suffix.length + o.keyword.length;
   if (o.keyword && o.separator) affixLen += o.separator.length;
   const digitsLen = o.numbers ? o.digitCount : 0;
-  let coreTargetLen = Math.max(3, o.length - affixLen - digitsLen);
 
-  const maxAttempts = o.count * 50 + 150;
+  const maxAttempts = Math.max(o.count * 60 + 200, 1000);
   let attempts = 0;
-  const deadline = Date.now() + 600; // 600ms sync ceiling
+  const deadline = Date.now() + Math.max(800, o.count * 15); // Dynamic ceiling for large batches
 
   while (out.length < o.count && attempts < maxAttempts && Date.now() < deadline) {
     attempts++;
     let rawCore = '';
+
+    const targetLength = o.minLength === o.maxLength
+      ? o.minLength
+      : o.minLength + secureRandomInt(o.maxLength - o.minLength + 1);
+    let coreTargetLen = Math.max(3, targetLength - affixLen - digitsLen);
 
     if (o.mode === 'say') {
       rawCore = generatePronounceableWord(coreTargetLen, o.excludeChars);
@@ -619,25 +666,13 @@ export function generateWordBatch(rawOptions = {}) {
     } else if (o.mode === 'memorable') {
       const pair = generateMemorableWord(coreTargetLen, o);
       if (pair) {
-        if (o.capitalize === 'camel') {
-          rawCore = pair.adj.toLowerCase() + pair.sep + pair.noun.charAt(0).toUpperCase() + pair.noun.slice(1).toLowerCase();
-        } else {
-          rawCore = pair.adj + pair.sep + pair.noun;
-        }
+        rawCore = pair.adj + pair.sep + pair.noun;
       }
     }
 
     if (!rawCore) continue;
 
-    // Apply casing
-    let finished = (o.mode === 'memorable' && o.capitalize === 'camel')
-      ? rawCore
-      : applyCasing(rawCore, o.capitalize);
-
-    // If uppercase toggle without lowercase
-    if (o.uppercase && !o.lowercase && o.mode !== 'memorable') {
-      finished = finished.toUpperCase();
-    }
+    let finished = rawCore;
 
     // Insert digits if requested
     if (o.numbers) {
@@ -661,6 +696,12 @@ export function generateWordBatch(rawOptions = {}) {
     // Prefix & Suffix
     if (o.prefix) finished = o.prefix + finished;
     if (o.suffix) finished = finished + o.suffix;
+
+    // Apply casing based on Lowercase & Uppercase switchers:
+    // - If only lowercase: all words are lowercase
+    // - If only uppercase: all words are uppercase
+    // - If both: each character can be either lowercase or uppercase (decided randomly)
+    finished = applyCasingByOptions(finished, o);
 
     // Deduplication check & safety check
     const normalizedKey = finished.toLowerCase();

@@ -128,20 +128,33 @@
           <div id="gen-mode-hint" class="gen-hint-text">Natural, pronounceable names built from phonetic English syllables (e.g., velora, talmir).</div>
         </div>
 
-        <!-- 2. Length Slider & Stepper -->
+        <!-- 2. Length Range (Min - Max) -->
         <div class="gen-section">
           <div class="gen-slider-header">
-            <label class="gen-section-label" for="gen-length-range">Length</label>
-            <div class="gen-stepper-wrap">
-              <button type="button" id="gen-len-minus" class="gen-stepper-btn" title="Decrease length">&minus;</button>
-              <span id="gen-len-display" class="gen-stepper-val">8</span>
-              <button type="button" id="gen-len-plus" class="gen-stepper-btn" title="Increase length">+</button>
+            <label class="gen-section-label" for="gen-len-min">Length</label>
+            <div class="gen-range-wrap">
+              <input 
+                type="number" 
+                id="gen-len-min" 
+                class="gen-range-input" 
+                min="3" 
+                max="32" 
+                value="6"
+                aria-label="Minimum length"
+                title="Minimum length (3-32)"
+              >
+              <span class="gen-range-sep">&mdash;</span>
+              <input 
+                type="number" 
+                id="gen-len-max" 
+                class="gen-range-input" 
+                min="3" 
+                max="32" 
+                value="10"
+                aria-label="Maximum length"
+                title="Maximum length (3-32)"
+              >
             </div>
-          </div>
-          <div class="gen-range-row">
-            <span class="gen-range-bound">4</span>
-            <input type="range" id="gen-length-range" class="gen-range-slider" min="4" max="24" value="8" step="1">
-            <span class="gen-range-bound">24</span>
           </div>
         </div>
 
@@ -149,11 +162,13 @@
         <div class="gen-section">
           <label class="gen-section-label">Batch Size</label>
           <div class="qty-pills gen-batch-pills">
-            <button type="button" class="qty-pill" data-count="4">4</button>
-            <button type="button" class="qty-pill" data-count="8">8</button>
+            <button type="button" class="qty-pill" data-count="3">3</button>
+            <button type="button" class="qty-pill" data-count="6">6</button>
+            <button type="button" class="qty-pill" data-count="9">9</button>
             <button type="button" class="qty-pill active" data-count="12">12</button>
             <button type="button" class="qty-pill" data-count="24">24</button>
             <button type="button" class="qty-pill" data-count="48">48</button>
+            <input type="number" id="gen-batch-custom" class="qty-custom-input gen-batch-custom" min="1" max="999" placeholder="Custom" title="Custom batch size (1-999)" aria-label="Custom batch size">
           </div>
         </div>
 
@@ -201,18 +216,7 @@
           </div>
         </div>
 
-        <!-- 5. Capitalization Style -->
-        <div class="gen-section">
-          <label class="gen-section-label" for="gen-opt-casing">Capitalization</label>
-          <select id="gen-opt-casing" class="sort-select" style="width: 100%;">
-            <option value="none" selected>none (lowercase)</option>
-            <option value="first">First letter capitalized (SwiftBlade)</option>
-            <option value="camel">camelCase (swiftBlade)</option>
-            <option value="uppercase">ALL CAPS (SWIFTBLADE)</option>
-          </select>
-        </div>
-
-        <!-- 6. Advanced Settings Collapsible -->
+        <!-- 5. Advanced Settings Collapsible -->
         <details class="gen-advanced-box">
           <summary class="gen-advanced-summary">
             <span>Advanced Filters & Affixes</span>
@@ -573,7 +577,7 @@
               <button class="qty-pill" data-qty="100">100</button>
               <button class="qty-pill" data-qty="200">200</button>
             </div>
-            <input type="number" id="input-custom-qty" class="qty-custom-input" min="5" max="500" value="50" title="Custom quantity">
+            <input type="number" id="input-custom-qty" class="qty-custom-input" min="5" max="999" value="50" title="Custom quantity">
           </div>
 
           <!-- Generate Buttons -->

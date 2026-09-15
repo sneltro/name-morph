@@ -68,11 +68,10 @@ const elements = {
   // Generator DOM
   genModeInputs: document.querySelectorAll('input[name="gen-mode"]'),
   genModeHint: document.getElementById('gen-mode-hint'),
-  genLenRange: document.getElementById('gen-length-range'),
-  genLenDisplay: document.getElementById('gen-len-display'),
-  genLenMinus: document.getElementById('gen-len-minus'),
-  genLenPlus: document.getElementById('gen-len-plus'),
+  genLenMin: document.getElementById('gen-len-min'),
+  genLenMax: document.getElementById('gen-len-max'),
   genBatchPills: document.querySelectorAll('.gen-batch-pills .qty-pill'),
+  genBatchCustom: document.getElementById('gen-batch-custom'),
   genOptLowercase: document.getElementById('gen-opt-lowercase'),
   genOptUppercase: document.getElementById('gen-opt-uppercase'),
   genOptNumbers: document.getElementById('gen-opt-numbers'),
@@ -80,7 +79,6 @@ const elements = {
   genNumberSettings: document.getElementById('gen-number-settings'),
   genNumberPlacement: document.getElementById('gen-number-placement'),
   genDigitCount: document.getElementById('gen-digit-count'),
-  genOptCasing: document.getElementById('gen-opt-casing'),
   genAdvPrefix: document.getElementById('gen-adv-prefix'),
   genAdvSuffix: document.getElementById('gen-adv-suffix'),
   genAdvKeyword: document.getElementById('gen-adv-keyword'),
@@ -216,14 +214,21 @@ function readGenConfigFromUI() {
     genState.config.mode = selectedMode.value;
   }
 
-  genState.config.length = parseInt(elements.genLenRange.value, 10) || 8;
+  let minVal = parseInt(elements.genLenMin.value, 10);
+  let maxVal = parseInt(elements.genLenMax.value, 10);
+  if (isNaN(minVal) || minVal < 3) minVal = 3;
+  if (minVal > 32) minVal = 32;
+  if (isNaN(maxVal) || maxVal < 3) maxVal = 3;
+  if (maxVal > 32) maxVal = 32;
+  if (minVal > maxVal) minVal = maxVal;
+  genState.config.minLength = minVal;
+  genState.config.maxLength = maxVal;
   genState.config.lowercase = elements.genOptLowercase.checked;
   genState.config.uppercase = elements.genOptUppercase.checked;
   genState.config.numbers = elements.genOptNumbers.checked;
   genState.config.symbols = elements.genOptSymbols.checked;
   genState.config.numberPlacement = elements.genNumberPlacement.value;
   genState.config.digitCount = parseInt(elements.genDigitCount.value, 10) || 2;
-  genState.config.capitalize = elements.genOptCasing.value;
 
   genState.config.prefix = elements.genAdvPrefix.value;
   genState.config.suffix = elements.genAdvSuffix.value;
@@ -235,6 +240,19 @@ function readGenConfigFromUI() {
   genState.config.avoidRepeats = elements.genAdvAvoidRepeats.checked;
   genState.config.leetspeak = elements.genAdvLeetspeak.checked;
 
+  if (elements.genBatchCustom && elements.genBatchCustom.classList.contains('active') && elements.genBatchCustom.value) {
+    let customVal = parseInt(elements.genBatchCustom.value, 10);
+    if (!isNaN(customVal) && customVal >= 1) {
+      if (customVal > 999) customVal = 999;
+      genState.config.count = customVal;
+    }
+  } else {
+    const activePill = document.querySelector('.gen-batch-pills .qty-pill.active');
+    if (activePill) {
+      genState.config.count = parseInt(activePill.dataset.count, 10) || 12;
+    }
+  }
+
   elements.genNumberSettings.style.display = genState.config.numbers ? 'flex' : 'none';
   elements.genModeHint.textContent = MODE_HINTS[genState.config.mode] || MODE_HINTS.say;
 }
@@ -245,15 +263,14 @@ function syncGenUIFromConfig() {
     input.checked = input.value === c.mode;
   });
 
-  elements.genLenRange.value = c.length;
-  elements.genLenDisplay.textContent = c.length;
+  elements.genLenMin.value = c.minLength || 6;
+  elements.genLenMax.value = c.maxLength || 10;
   elements.genOptLowercase.checked = !!c.lowercase;
   elements.genOptUppercase.checked = !!c.uppercase;
   elements.genOptNumbers.checked = !!c.numbers;
   elements.genOptSymbols.checked = !!c.symbols;
   elements.genNumberPlacement.value = c.numberPlacement || 'end';
   elements.genDigitCount.value = String(c.digitCount || 2);
-  elements.genOptCasing.value = c.capitalize || 'none';
 
   elements.genAdvPrefix.value = c.prefix || '';
   elements.genAdvSuffix.value = c.suffix || '';
@@ -265,9 +282,20 @@ function syncGenUIFromConfig() {
   elements.genAdvAvoidRepeats.checked = !!c.avoidRepeats;
   elements.genAdvLeetspeak.checked = !!c.leetspeak;
 
+  const isPreset = [3, 6, 9, 12, 24, 48].includes(c.count);
   elements.genBatchPills.forEach(p => {
     p.classList.toggle('active', parseInt(p.dataset.count, 10) === c.count);
   });
+
+  if (elements.genBatchCustom) {
+    if (!isPreset && c.count) {
+      elements.genBatchCustom.value = c.count;
+      elements.genBatchCustom.classList.add('active');
+    } else {
+      elements.genBatchCustom.value = '';
+      elements.genBatchCustom.classList.remove('active');
+    }
+  }
 
   elements.genNumberSettings.style.display = c.numbers ? 'flex' : 'none';
   elements.genModeHint.textContent = MODE_HINTS[c.mode] || MODE_HINTS.say;
@@ -355,22 +383,22 @@ function renderGenResults() {
 
     card.innerHTML = `
       <div class="card-top">
-        <span class="card-text">${item.text}</span>
+        <span class="card-text" title="${item.text}">${item.text}</span>
+      </div>
+      <div class="card-bottom">
         <div class="card-actions">
           <button class="btn-card-icon btn-card-copy" title="Copy to clipboard">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
               <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
             </svg>
           </button>
           <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="Save to favorites">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
           </button>
         </div>
-      </div>
-      <div class="card-bottom">
         <div class="card-checker">
           <a class="btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X">X</a>
           <a class="btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
@@ -673,23 +701,23 @@ function renderResults() {
 
     card.innerHTML = `
       <div class="card-top">
-        <span class="card-text">${item.text}</span>
-        <div class="card-actions">
-          <button class="btn-card-icon btn-card-copy" title="Copy to clipboard">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-            </svg>
-          </button>
-          <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="Save to favorites">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-            </svg>
-          </button>
-        </div>
+        <span class="card-text" title="${item.text}">${item.text}</span>
       </div>
       <div class="card-bottom">
-        <div class="card-tags">
+        <div class="card-bottom-left">
+          <div class="card-actions">
+            <button class="btn-card-icon btn-card-copy" title="Copy to clipboard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+              </svg>
+            </button>
+            <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="Save to favorites">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </button>
+          </div>
           <span class="${tagClass}">${item.tags && item.tags[1] ? item.tags[1] : item.rule}</span>
         </div>
         <div class="card-checker">
@@ -865,30 +893,61 @@ function setupEventListeners() {
     });
   });
 
-  // Length Stepper & Range Slider
-  elements.genLenRange.addEventListener('input', () => {
-    const val = parseInt(elements.genLenRange.value, 10);
-    elements.genLenDisplay.textContent = val;
-    genState.config.length = val;
+  // Length Range Inputs with min/max validation
+  function commitMinLength() {
+    let minVal = parseInt(elements.genLenMin.value, 10);
+    const maxVal = parseInt(elements.genLenMax.value, 10) || 10;
+    if (isNaN(minVal) || minVal < 3) minVal = 3;
+    if (minVal > 32) minVal = 32;
+    // Check min isn't bigger than max; then it defaults to the same number as max
+    if (minVal > maxVal) {
+      minVal = maxVal;
+    }
+    elements.genLenMin.value = minVal;
+    genState.config.minLength = minVal;
     generateNames();
+  }
+
+  function commitMaxLength() {
+    let maxVal = parseInt(elements.genLenMax.value, 10);
+    const minVal = parseInt(elements.genLenMin.value, 10) || 3;
+    if (isNaN(maxVal) || maxVal > 32) maxVal = 32;
+    if (maxVal < 3) maxVal = 3;
+    // Vice versa: check max isn't smaller than min; then it defaults to the same number as min
+    if (maxVal < minVal) {
+      maxVal = minVal;
+    }
+    elements.genLenMax.value = maxVal;
+    genState.config.maxLength = maxVal;
+    generateNames();
+  }
+
+  elements.genLenMin.addEventListener('input', () => {
+    const minVal = parseInt(elements.genLenMin.value, 10);
+    const maxVal = parseInt(elements.genLenMax.value, 10);
+    if (!isNaN(minVal) && minVal >= 3 && minVal <= maxVal) {
+      genState.config.minLength = minVal;
+      generateNames();
+    }
+  });
+  elements.genLenMin.addEventListener('change', commitMinLength);
+  elements.genLenMin.addEventListener('blur', commitMinLength);
+  elements.genLenMin.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') elements.genLenMin.blur();
   });
 
-  elements.genLenMinus.addEventListener('click', () => {
-    let val = parseInt(elements.genLenRange.value, 10) - 1;
-    if (val < 4) val = 4;
-    elements.genLenRange.value = val;
-    elements.genLenDisplay.textContent = val;
-    genState.config.length = val;
-    generateNames();
+  elements.genLenMax.addEventListener('input', () => {
+    const maxVal = parseInt(elements.genLenMax.value, 10);
+    const minVal = parseInt(elements.genLenMin.value, 10);
+    if (!isNaN(maxVal) && maxVal <= 32 && maxVal >= minVal) {
+      genState.config.maxLength = maxVal;
+      generateNames();
+    }
   });
-
-  elements.genLenPlus.addEventListener('click', () => {
-    let val = parseInt(elements.genLenRange.value, 10) + 1;
-    if (val > 24) val = 24;
-    elements.genLenRange.value = val;
-    elements.genLenDisplay.textContent = val;
-    genState.config.length = val;
-    generateNames();
+  elements.genLenMax.addEventListener('change', commitMaxLength);
+  elements.genLenMax.addEventListener('blur', commitMaxLength);
+  elements.genLenMax.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') elements.genLenMax.blur();
   });
 
   // Batch Count Pills
@@ -896,15 +955,83 @@ function setupEventListeners() {
     pill.addEventListener('click', () => {
       elements.genBatchPills.forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
+      if (elements.genBatchCustom) {
+        elements.genBatchCustom.value = '';
+        elements.genBatchCustom.classList.remove('active');
+      }
       genState.config.count = parseInt(pill.dataset.count, 10);
       generateNames(true);
     });
   });
 
+  if (elements.genBatchCustom) {
+    const commitCustomBatch = () => {
+      let val = parseInt(elements.genBatchCustom.value, 10);
+      if (isNaN(val) || val < 1) {
+        const activePill = document.querySelector('.gen-batch-pills .qty-pill.active');
+        if (activePill) {
+          genState.config.count = parseInt(activePill.dataset.count, 10);
+          elements.genBatchCustom.value = '';
+          elements.genBatchCustom.classList.remove('active');
+          return;
+        }
+        val = 12;
+      }
+      if (val > 999) val = 999;
+      elements.genBatchCustom.value = val;
+      genState.config.count = val;
+
+      const matchingPill = Array.from(elements.genBatchPills).find(
+        p => parseInt(p.dataset.count, 10) === val
+      );
+      elements.genBatchPills.forEach(p => p.classList.remove('active'));
+      if (matchingPill) {
+        matchingPill.classList.add('active');
+        elements.genBatchCustom.classList.remove('active');
+      } else {
+        elements.genBatchCustom.classList.add('active');
+      }
+      generateNames(true);
+    };
+
+    elements.genBatchCustom.addEventListener('input', () => {
+      const raw = elements.genBatchCustom.value.trim();
+      if (raw !== '') {
+        let val = parseInt(raw, 10);
+        if (!isNaN(val)) {
+          if (val > 999) {
+            val = 999;
+            elements.genBatchCustom.value = 999;
+          }
+          if (val >= 1) {
+            genState.config.count = val;
+            const matchingPill = Array.from(elements.genBatchPills).find(
+              p => parseInt(p.dataset.count, 10) === val
+            );
+            elements.genBatchPills.forEach(p => p.classList.remove('active'));
+            if (matchingPill) {
+              matchingPill.classList.add('active');
+              elements.genBatchCustom.classList.remove('active');
+            } else {
+              elements.genBatchCustom.classList.add('active');
+            }
+          }
+        }
+      }
+    });
+    elements.genBatchCustom.addEventListener('change', commitCustomBatch);
+    elements.genBatchCustom.addEventListener('blur', commitCustomBatch);
+    elements.genBatchCustom.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        elements.genBatchCustom.blur();
+      }
+    });
+  }
+
   // Generator Checkboxes & Selects
   const genInputsToWatch = [
     elements.genOptLowercase, elements.genOptUppercase, elements.genOptNumbers, elements.genOptSymbols,
-    elements.genNumberPlacement, elements.genDigitCount, elements.genOptCasing,
+    elements.genNumberPlacement, elements.genDigitCount,
     elements.genAdvPrefix, elements.genAdvSuffix, elements.genAdvKeyword, elements.genAdvKeywordPos,
     elements.genAdvSeparator, elements.genAdvExclude, elements.genAdvStartLetter,
     elements.genAdvAvoidRepeats, elements.genAdvLeetspeak
@@ -927,13 +1054,20 @@ function setupEventListeners() {
   elements.genBtnSurprise.addEventListener('click', () => {
     const modes = ['say', 'read', 'memorable', 'random'];
     const randomMode = modes[Math.floor(Math.random() * modes.length)];
-    const randomLength = Math.floor(Math.random() * 9) + 6; // 6 to 14
-    const casings = ['none', 'first', 'camel'];
-    const randomCasing = casings[Math.floor(Math.random() * casings.length)];
+    const randomMin = Math.floor(Math.random() * 4) + 4; // 4 to 7
+    const randomMax = randomMin + Math.floor(Math.random() * 4) + 1; // min + 1..4
+    const caseCombos = [
+      { lowercase: true, uppercase: false },
+      { lowercase: false, uppercase: true },
+      { lowercase: true, uppercase: true }
+    ];
+    const pickedCase = caseCombos[Math.floor(Math.random() * caseCombos.length)];
 
     genState.config.mode = randomMode;
-    genState.config.length = randomLength;
-    genState.config.capitalize = randomCasing;
+    genState.config.minLength = randomMin;
+    genState.config.maxLength = randomMax;
+    genState.config.lowercase = pickedCase.lowercase;
+    genState.config.uppercase = pickedCase.uppercase;
     genState.config.numbers = Math.random() > 0.6;
     syncGenUIFromConfig();
     generateNames(true);
@@ -1019,7 +1153,7 @@ function setupEventListeners() {
   elements.inputCustomQty.addEventListener('change', () => {
     let val = parseInt(elements.inputCustomQty.value, 10);
     if (isNaN(val) || val < 5) val = 5;
-    if (val > 500) val = 500;
+    if (val > 999) val = 999;
     elements.inputCustomQty.value = val;
     tweakerState.targetCount = val;
 
