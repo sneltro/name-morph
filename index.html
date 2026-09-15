@@ -24,6 +24,36 @@
           <h1>NameMorph <span class="version-badge">v2.0</span></h1>
         </div>
       </div>
+
+      <!-- Subcategory Navigation -->
+      <nav class="subcat-nav-inner" aria-label="Tool subcategories">
+        <button id="nav-btn-generator" class="subcat-nav-btn active" data-tab="generator">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>
+          </svg>
+          <span class="subcat-nav-label">Username Generator</span>
+          <span class="subcat-badge badge-new">New</span>
+        </button>
+
+        <button id="nav-btn-checker" class="subcat-nav-btn" data-tab="checker">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+          <span class="subcat-nav-label">Username Checker</span>
+          <span class="subcat-badge badge-stub">Coming Soon</span>
+        </button>
+
+        <button id="nav-btn-tweaker" class="subcat-nav-btn" data-tab="tweaker">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span class="subcat-nav-label">Username Tweaker</span>
+          <span class="subcat-badge badge-morph">Morph</span>
+        </button>
+      </nav>
+
       <div class="header-actions">
         <button id="btn-open-favorites" class="btn-favorites-toggle" title="View saved names">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -35,37 +65,6 @@
       </div>
     </div>
   </header>
-
-  <!-- Subcategory Navigation -->
-  <nav class="subcat-nav-bar" aria-label="Tool subcategories">
-    <div class="subcat-nav-inner">
-      <button id="nav-btn-generator" class="subcat-nav-btn active" data-tab="generator">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>
-        </svg>
-        <span class="subcat-nav-label">Username Generator</span>
-        <span class="subcat-badge badge-new">New</span>
-      </button>
-
-      <button id="nav-btn-checker" class="subcat-nav-btn" data-tab="checker">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
-          <path d="m9 12 2 2 4-4"/>
-        </svg>
-        <span class="subcat-nav-label">Username Checker</span>
-        <span class="subcat-badge badge-stub">Coming Soon</span>
-      </button>
-
-      <button id="nav-btn-tweaker" class="subcat-nav-btn" data-tab="tweaker">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
-        <span class="subcat-nav-label">Username Tweaker</span>
-        <span class="subcat-badge badge-morph">Morph</span>
-      </button>
-    </div>
-  </nav>
 
   <!-- ======================================================================= -->
   <!-- SUBCATEGORY 1: USERNAME GENERATOR (NEW)                                  -->
@@ -100,28 +99,28 @@
             <label class="gen-mode-chip">
               <input type="radio" name="gen-mode" value="say" checked>
               <div class="gen-mode-content">
-                <span class="gen-mode-title">🗣️ Easy to Say</span>
+                <span class="gen-mode-title">Easy to Say</span>
                 <span class="gen-mode-desc">Phonetic syllables</span>
               </div>
             </label>
             <label class="gen-mode-chip">
               <input type="radio" name="gen-mode" value="read">
               <div class="gen-mode-content">
-                <span class="gen-mode-title">👀 Easy to Read</span>
+                <span class="gen-mode-title">Easy to Read</span>
                 <span class="gen-mode-desc">No 0/O/1/l lookalikes</span>
               </div>
             </label>
             <label class="gen-mode-chip">
               <input type="radio" name="gen-mode" value="memorable">
               <div class="gen-mode-content">
-                <span class="gen-mode-title">🧠 Word Pairs</span>
+                <span class="gen-mode-title">Word Pairs</span>
                 <span class="gen-mode-desc">Adjective + Noun</span>
               </div>
             </label>
             <label class="gen-mode-chip">
               <input type="radio" name="gen-mode" value="random">
               <div class="gen-mode-content">
-                <span class="gen-mode-title">🎲 Random</span>
+                <span class="gen-mode-title">Random</span>
                 <span class="gen-mode-desc">Letters & symbols</span>
               </div>
             </label>
@@ -129,20 +128,33 @@
           <div id="gen-mode-hint" class="gen-hint-text">Natural, pronounceable names built from phonetic English syllables (e.g., velora, talmir).</div>
         </div>
 
-        <!-- 2. Length Slider & Stepper -->
+        <!-- 2. Length Range (Min - Max) -->
         <div class="gen-section">
           <div class="gen-slider-header">
-            <label class="gen-section-label" for="gen-length-range">Length</label>
-            <div class="gen-stepper-wrap">
-              <button type="button" id="gen-len-minus" class="gen-stepper-btn" title="Decrease length">&minus;</button>
-              <span id="gen-len-display" class="gen-stepper-val">8</span>
-              <button type="button" id="gen-len-plus" class="gen-stepper-btn" title="Increase length">+</button>
+            <label class="gen-section-label" for="gen-len-min">Length</label>
+            <div class="gen-range-wrap">
+              <input 
+                type="number" 
+                id="gen-len-min" 
+                class="gen-range-input" 
+                min="3" 
+                max="32" 
+                value="6"
+                aria-label="Minimum length"
+                title="Minimum length (3-32)"
+              >
+              <span class="gen-range-sep">&mdash;</span>
+              <input 
+                type="number" 
+                id="gen-len-max" 
+                class="gen-range-input" 
+                min="3" 
+                max="32" 
+                value="10"
+                aria-label="Maximum length"
+                title="Maximum length (3-32)"
+              >
             </div>
-          </div>
-          <div class="gen-range-row">
-            <span class="gen-range-bound">4</span>
-            <input type="range" id="gen-length-range" class="gen-range-slider" min="4" max="24" value="8" step="1">
-            <span class="gen-range-bound">24</span>
           </div>
         </div>
 
@@ -150,11 +162,13 @@
         <div class="gen-section">
           <label class="gen-section-label">Batch Size</label>
           <div class="qty-pills gen-batch-pills">
-            <button type="button" class="qty-pill" data-count="4">4</button>
-            <button type="button" class="qty-pill" data-count="8">8</button>
+            <button type="button" class="qty-pill" data-count="3">3</button>
+            <button type="button" class="qty-pill" data-count="6">6</button>
+            <button type="button" class="qty-pill" data-count="9">9</button>
             <button type="button" class="qty-pill active" data-count="12">12</button>
             <button type="button" class="qty-pill" data-count="24">24</button>
             <button type="button" class="qty-pill" data-count="48">48</button>
+            <input type="number" id="gen-batch-custom" class="qty-custom-input gen-batch-custom" min="1" max="999" placeholder="Custom" title="Custom batch size (1-999)" aria-label="Custom batch size">
           </div>
         </div>
 
@@ -202,21 +216,10 @@
           </div>
         </div>
 
-        <!-- 5. Capitalization Style -->
-        <div class="gen-section">
-          <label class="gen-section-label" for="gen-opt-casing">Capitalization</label>
-          <select id="gen-opt-casing" class="sort-select" style="width: 100%;">
-            <option value="none" selected>none (lowercase)</option>
-            <option value="first">First letter capitalized (SwiftBlade)</option>
-            <option value="camel">camelCase (swiftBlade)</option>
-            <option value="uppercase">ALL CAPS (SWIFTBLADE)</option>
-          </select>
-        </div>
-
-        <!-- 6. Advanced Settings Collapsible -->
+        <!-- 5. Advanced Settings Collapsible -->
         <details class="gen-advanced-box">
           <summary class="gen-advanced-summary">
-            <span>⚙️ Advanced Filters & Affixes</span>
+            <span>Advanced Filters & Affixes</span>
           </summary>
           <div class="gen-advanced-body">
             <div class="gen-adv-field">
@@ -229,19 +232,19 @@
             </div>
             <div class="gen-adv-field">
               <label for="gen-adv-keyword">Keyword</label>
-              <input type="text" id="gen-adv-keyword" placeholder="e.g. dev, cat" maxlength="16" autocomplete="off" spellcheck="false">
+              <input type="text" id="gen-adv-keyword" placeholder="e.g. cloud, dev" maxlength="16" autocomplete="off" spellcheck="false">
             </div>
             <div class="gen-adv-field">
               <label for="gen-adv-keyword-pos">Keyword Placement</label>
-              <select id="gen-adv-keyword-pos" class="sort-select">
-                <option value="start" selected>Start</option>
-                <option value="end">End</option>
+              <select id="gen-adv-keyword-pos">
+                <option value="start">Prepend (keyword_name)</option>
+                <option value="end">Append (name_keyword)</option>
               </select>
             </div>
             <div class="gen-adv-field">
               <label for="gen-adv-separator">Separator</label>
-              <select id="gen-adv-separator" class="sort-select">
-                <option value="" selected>None</option>
+              <select id="gen-adv-separator">
+                <option value="">None (solid)</option>
                 <option value="-">Hyphen (-)</option>
                 <option value="_">Underscore (_)</option>
                 <option value=".">Dot (.)</option>
@@ -249,7 +252,7 @@
             </div>
             <div class="gen-adv-field">
               <label for="gen-adv-exclude">Exclude Characters</label>
-              <input type="text" id="gen-adv-exclude" placeholder="e.g. qxz" maxlength="20" autocomplete="off" spellcheck="false">
+              <input type="text" id="gen-adv-exclude" placeholder="e.g. 0, 1, z, x" maxlength="16" autocomplete="off" spellcheck="false">
             </div>
             <div class="gen-adv-toggles">
               <label class="checkbox-label">
@@ -262,34 +265,28 @@
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" id="gen-adv-leetspeak">
-                <span>Light leetspeak (4 for a, 3 for e)</span>
+                <span>Apply subtle leet speak (e→3, a→4, s→5)</span>
               </label>
             </div>
           </div>
         </details>
 
-        <!-- Primary Generation Trigger -->
+        <!-- Generate Buttons -->
         <div class="gen-actions-box">
-          <button id="gen-btn-generate" class="btn-primary gen-btn-main" title="Generate words">
+          <button id="gen-btn-generate" class="btn-primary gen-btn-main">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-              <path d="M3 3v5h5"/>
-              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
-              <path d="M16 21h5v-5"/>
+              <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M5.6 18.4l2.1-2.1m8.6-8.6 2.1-2.1"/>
             </svg>
             <span>Generate Names</span>
           </button>
-          <button id="gen-btn-surprise" class="btn-secondary gen-btn-surprise" title="Random settings & roll">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/>
-              <path d="m18 2 4 4-4 4"/>
-              <path d="M2 6h1.9c1.5 0 2.9.9 3.6 2.2"/>
-              <path d="M22 18h-5.9c-1.3 0-2.6-.7-3.3-1.8l-.5-.8"/>
-              <path d="m18 14 4 4-4 4"/>
+          <button id="gen-btn-surprise" class="btn-secondary gen-btn-surprise" title="Roll completely random settings">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
             </svg>
-            <span>Surprise Me</span>
+            <span>Surprise Me!</span>
           </button>
         </div>
+
       </aside>
 
       <!-- Right Results Panel -->
@@ -301,10 +298,10 @@
 
           <div class="toolbar-actions">
             <select id="gen-select-sort" class="sort-select" title="Sort names">
-              <option value="random">🎲 Random</option>
-              <option value="shortest">⚡ Shortest First</option>
-              <option value="longest">📏 Longest First</option>
-              <option value="alpha">🔤 A to Z</option>
+              <option value="random">Random</option>
+              <option value="shortest">Shortest First</option>
+              <option value="longest">Longest First</option>
+              <option value="alpha">A to Z</option>
             </select>
             <input 
               type="text" 
@@ -385,7 +382,7 @@
             </button>
           </div>
           <p class="checker-privacy-note">
-            🛡️ <strong>Zero-Sniping Guarantee:</strong> NameMorph will never log, store, or front-run searched handles. All checks will run via decentralized client-safe proxies.
+            <strong>Zero-Sniping Guarantee:</strong> NameMorph will never log, store, or front-run searched handles. All checks will run via decentralized client-safe proxies.
           </p>
         </div>
       </div>
@@ -397,7 +394,7 @@
           <!-- Platform 1 -->
           <div class="platform-card">
             <div class="platform-head">
-              <span class="platform-icon">🐙</span>
+              <span class="platform-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg></span>
               <div>
                 <h4 class="platform-name">GitHub</h4>
                 <span class="platform-url">github.com/{handle}</span>
@@ -412,7 +409,7 @@
           <!-- Platform 2 -->
           <div class="platform-card">
             <div class="platform-head">
-              <span class="platform-icon">𝕏</span>
+              <span class="platform-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span>
               <div>
                 <h4 class="platform-name">X (Twitter)</h4>
                 <span class="platform-url">x.com/{handle}</span>
@@ -427,7 +424,7 @@
           <!-- Platform 3 -->
           <div class="platform-card">
             <div class="platform-head">
-              <span class="platform-icon">🎮</span>
+              <span class="platform-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg></span>
               <div>
                 <h4 class="platform-name">Discord</h4>
                 <span class="platform-url">discord.com</span>
@@ -442,7 +439,7 @@
           <!-- Platform 4 -->
           <div class="platform-card">
             <div class="platform-head">
-              <span class="platform-icon">🟣</span>
+              <span class="platform-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg></span>
               <div>
                 <h4 class="platform-name">Twitch</h4>
                 <span class="platform-url">twitch.tv/{handle}</span>
@@ -457,7 +454,7 @@
           <!-- Platform 5 -->
           <div class="platform-card">
             <div class="platform-head">
-              <span class="platform-icon">▶️</span>
+              <span class="platform-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></span>
               <div>
                 <h4 class="platform-name">YouTube</h4>
                 <span class="platform-url">youtube.com/@{handle}</span>
@@ -472,7 +469,7 @@
           <!-- Platform 6 -->
           <div class="platform-card">
             <div class="platform-head">
-              <span class="platform-icon">🟠</span>
+              <span class="platform-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.703zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg></span>
               <div>
                 <h4 class="platform-name">Reddit</h4>
                 <span class="platform-url">reddit.com/user/{handle}</span>
@@ -487,7 +484,7 @@
           <!-- Platform 7 -->
           <div class="platform-card">
             <div class="platform-head">
-              <span class="platform-icon">📸</span>
+              <span class="platform-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></span>
               <div>
                 <h4 class="platform-name">Instagram</h4>
                 <span class="platform-url">instagram.com/{handle}</span>
@@ -502,7 +499,7 @@
           <!-- Platform 8 -->
           <div class="platform-card">
             <div class="platform-head">
-              <span class="platform-icon">🎵</span>
+              <span class="platform-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.24 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></span>
               <div>
                 <h4 class="platform-name">TikTok</h4>
                 <span class="platform-url">tiktok.com/@{handle}</span>
@@ -517,7 +514,7 @@
           <!-- Platform 9 -->
           <div class="platform-card">
             <div class="platform-head">
-              <span class="platform-icon">💨</span>
+              <span class="platform-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.005.105.005.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 12-5.373 12-12s-5.373-12-12-12zM7.545 14.88l-.512-.211c-.375-.155-.783-.243-1.21-.243-1.657 0-3.006 1.348-3.006 3.005 0 1.657 1.349 3.005 3.006 3.005 1.656 0 3.005-1.348 3.005-3.005 0-.427-.088-.835-.243-1.21l-.21-.512 2.67-1.907c.218.064.447.102.686.102 1.328 0 2.408-1.079 2.408-2.408 0-1.328-1.08-2.407-2.408-2.407-1.329 0-2.409 1.079-2.409 2.407 0 .239.038.468.102.686L7.545 14.88z"/></svg></span>
               <div>
                 <h4 class="platform-name">Steam</h4>
                 <span class="platform-url">steamcommunity.com/id/{handle}</span>
@@ -563,7 +560,12 @@
               autocomplete="off"
               spellcheck="false"
             >
-            <button id="btn-clear-input" class="input-clear-btn" title="Clear input">✕</button>
+            <button id="btn-clear-input" class="input-clear-btn" title="Clear input" aria-label="Clear input">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
           </div>
 
           <!-- Quantity Control -->
@@ -575,7 +577,7 @@
               <button class="qty-pill" data-qty="100">100</button>
               <button class="qty-pill" data-qty="200">200</button>
             </div>
-            <input type="number" id="input-custom-qty" class="qty-custom-input" min="5" max="500" value="50" title="Custom quantity">
+            <input type="number" id="input-custom-qty" class="qty-custom-input" min="5" max="999" value="50" title="Custom quantity">
           </div>
 
           <!-- Generate Buttons -->
@@ -638,7 +640,7 @@
         <div class="rule-group" id="group-leet">
           <div class="rule-group-header">
             <div class="rule-group-title">
-              <span>🔢 Leet Speak</span>
+              <span>Leet Speak</span>
               <span class="rule-group-badge">Numbers</span>
             </div>
             <label class="switch">
@@ -666,7 +668,7 @@
         <div class="rule-group" id="group-letter-swaps">
           <div class="rule-group-header">
             <div class="rule-group-title">
-              <span>🔤 Letter Replacements</span>
+              <span>Letter Replacements</span>
               <span class="rule-group-badge">Alphabetical</span>
             </div>
             <label class="switch">
@@ -690,7 +692,7 @@
         <div class="rule-group" id="group-prefixes">
           <div class="rule-group-header">
             <div class="rule-group-title">
-              <span>➕ Prefixes</span>
+              <span>Prefixes</span>
               <span class="rule-group-badge">Prepend</span>
             </div>
             <label class="switch">
@@ -718,7 +720,7 @@
         <div class="rule-group" id="group-suffixes">
           <div class="rule-group-header">
             <div class="rule-group-title">
-              <span>🏷️ Suffixes</span>
+              <span>Suffixes</span>
               <span class="rule-group-badge">Append</span>
             </div>
             <label class="switch">
@@ -746,7 +748,7 @@
         <div class="rule-group" id="group-vowels">
           <div class="rule-group-header">
             <div class="rule-group-title">
-              <span>🅰️ Vowel Modifications</span>
+              <span>Vowel Modifications</span>
               <span class="rule-group-badge">Vowels</span>
             </div>
             <label class="switch">
@@ -774,7 +776,7 @@
         <div class="rule-group" id="group-extensions">
           <div class="rule-group-header">
             <div class="rule-group-title">
-              <span>🔂 Letter Extensions</span>
+              <span>Letter Extensions</span>
               <span class="rule-group-badge">Repeat</span>
             </div>
             <label class="switch">
@@ -788,7 +790,7 @@
         <div class="rule-group" id="group-framing">
           <div class="rule-group-header">
             <div class="rule-group-title">
-              <span>✨ Gamer Framing & Delimiters</span>
+              <span>Gamer Framing & Delimiters</span>
               <span class="rule-group-badge">Tags</span>
             </div>
             <label class="switch">
@@ -808,7 +810,7 @@
         <div class="rule-group" id="group-casing">
           <div class="rule-group-header">
             <div class="rule-group-title">
-              <span>🔠 Stylized Casing</span>
+              <span>Stylized Casing</span>
               <span class="rule-group-badge">Case</span>
             </div>
             <label class="switch">
@@ -829,10 +831,10 @@
 
           <div class="toolbar-actions">
             <select id="select-sort" class="sort-select" title="Sort / Shuffle Variations">
-              <option value="random">🎲 Random (Fresh)</option>
-              <option value="shortest">⚡ Shortest First</option>
-              <option value="longest">📏 Longest First</option>
-              <option value="alpha">🔤 A to Z</option>
+              <option value="random">Random (Fresh)</option>
+              <option value="shortest">Shortest First</option>
+              <option value="longest">Longest First</option>
+              <option value="alpha">A to Z</option>
             </select>
             <input 
               type="text" 
@@ -889,7 +891,12 @@
         </svg>
         <span>Saved Names (<span id="drawer-fav-count">0</span>)</span>
       </div>
-      <button id="btn-close-drawer" class="btn-drawer-close">✕</button>
+      <button id="btn-close-drawer" class="btn-drawer-close" aria-label="Close drawer" title="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
     </div>
     <div class="drawer-body" id="drawer-favorites-list">
       <!-- Populated dynamically -->
@@ -899,9 +906,6 @@
       <button id="btn-clear-favorites" class="btn-tool" style="color: var(--danger);">Clear</button>
     </div>
   </aside>
-
-  <!-- Toast Notification Container -->
-  <div class="toast-container" id="toast-container"></div>
 
   <script type="module" src="/src/main.js"></script>
 </body>

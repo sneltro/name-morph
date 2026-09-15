@@ -68,11 +68,10 @@ const elements = {
   // Generator DOM
   genModeInputs: document.querySelectorAll('input[name="gen-mode"]'),
   genModeHint: document.getElementById('gen-mode-hint'),
-  genLenRange: document.getElementById('gen-length-range'),
-  genLenDisplay: document.getElementById('gen-len-display'),
-  genLenMinus: document.getElementById('gen-len-minus'),
-  genLenPlus: document.getElementById('gen-len-plus'),
+  genLenMin: document.getElementById('gen-len-min'),
+  genLenMax: document.getElementById('gen-len-max'),
   genBatchPills: document.querySelectorAll('.gen-batch-pills .qty-pill'),
+  genBatchCustom: document.getElementById('gen-batch-custom'),
   genOptLowercase: document.getElementById('gen-opt-lowercase'),
   genOptUppercase: document.getElementById('gen-opt-uppercase'),
   genOptNumbers: document.getElementById('gen-opt-numbers'),
@@ -80,7 +79,6 @@ const elements = {
   genNumberSettings: document.getElementById('gen-number-settings'),
   genNumberPlacement: document.getElementById('gen-number-placement'),
   genDigitCount: document.getElementById('gen-digit-count'),
-  genOptCasing: document.getElementById('gen-opt-casing'),
   genAdvPrefix: document.getElementById('gen-adv-prefix'),
   genAdvSuffix: document.getElementById('gen-adv-suffix'),
   genAdvKeyword: document.getElementById('gen-adv-keyword'),
@@ -120,7 +118,6 @@ const elements = {
   loadMoreContainer: document.getElementById('load-more-container'),
   btnLoadMore: document.getElementById('btn-load-more'),
   btnResetRules: document.getElementById('btn-reset-rules'),
-  toastContainer: document.getElementById('toast-container'),
 
   // Favorites Drawer
   btnOpenFavorites: document.getElementById('btn-open-favorites'),
@@ -160,23 +157,10 @@ const elements = {
 };
 
 /**
- * Toast Notification Helper
+ * Toast Notification Helper (Disabled)
  */
-function showToast(message) {
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.innerHTML = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="20 6 9 17 4 12"/>
-    </svg>
-    <span>${message}</span>
-  `;
-  elements.toastContainer.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 200ms ease';
-    setTimeout(() => toast.remove(), 200);
-  }, 2200);
+function showToast() {
+  // Notifications in bottom right corner disabled
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -230,14 +214,21 @@ function readGenConfigFromUI() {
     genState.config.mode = selectedMode.value;
   }
 
-  genState.config.length = parseInt(elements.genLenRange.value, 10) || 8;
+  let minVal = parseInt(elements.genLenMin.value, 10);
+  let maxVal = parseInt(elements.genLenMax.value, 10);
+  if (isNaN(minVal) || minVal < 3) minVal = 3;
+  if (minVal > 32) minVal = 32;
+  if (isNaN(maxVal) || maxVal < 3) maxVal = 3;
+  if (maxVal > 32) maxVal = 32;
+  if (minVal > maxVal) minVal = maxVal;
+  genState.config.minLength = minVal;
+  genState.config.maxLength = maxVal;
   genState.config.lowercase = elements.genOptLowercase.checked;
   genState.config.uppercase = elements.genOptUppercase.checked;
   genState.config.numbers = elements.genOptNumbers.checked;
   genState.config.symbols = elements.genOptSymbols.checked;
   genState.config.numberPlacement = elements.genNumberPlacement.value;
   genState.config.digitCount = parseInt(elements.genDigitCount.value, 10) || 2;
-  genState.config.capitalize = elements.genOptCasing.value;
 
   genState.config.prefix = elements.genAdvPrefix.value;
   genState.config.suffix = elements.genAdvSuffix.value;
@@ -249,6 +240,19 @@ function readGenConfigFromUI() {
   genState.config.avoidRepeats = elements.genAdvAvoidRepeats.checked;
   genState.config.leetspeak = elements.genAdvLeetspeak.checked;
 
+  if (elements.genBatchCustom && elements.genBatchCustom.classList.contains('active') && elements.genBatchCustom.value) {
+    let customVal = parseInt(elements.genBatchCustom.value, 10);
+    if (!isNaN(customVal) && customVal >= 1) {
+      if (customVal > 999) customVal = 999;
+      genState.config.count = customVal;
+    }
+  } else {
+    const activePill = document.querySelector('.gen-batch-pills .qty-pill.active');
+    if (activePill) {
+      genState.config.count = parseInt(activePill.dataset.count, 10) || 12;
+    }
+  }
+
   elements.genNumberSettings.style.display = genState.config.numbers ? 'flex' : 'none';
   elements.genModeHint.textContent = MODE_HINTS[genState.config.mode] || MODE_HINTS.say;
 }
@@ -259,15 +263,14 @@ function syncGenUIFromConfig() {
     input.checked = input.value === c.mode;
   });
 
-  elements.genLenRange.value = c.length;
-  elements.genLenDisplay.textContent = c.length;
+  elements.genLenMin.value = c.minLength || 6;
+  elements.genLenMax.value = c.maxLength || 10;
   elements.genOptLowercase.checked = !!c.lowercase;
   elements.genOptUppercase.checked = !!c.uppercase;
   elements.genOptNumbers.checked = !!c.numbers;
   elements.genOptSymbols.checked = !!c.symbols;
   elements.genNumberPlacement.value = c.numberPlacement || 'end';
   elements.genDigitCount.value = String(c.digitCount || 2);
-  elements.genOptCasing.value = c.capitalize || 'none';
 
   elements.genAdvPrefix.value = c.prefix || '';
   elements.genAdvSuffix.value = c.suffix || '';
@@ -279,9 +282,20 @@ function syncGenUIFromConfig() {
   elements.genAdvAvoidRepeats.checked = !!c.avoidRepeats;
   elements.genAdvLeetspeak.checked = !!c.leetspeak;
 
+  const isPreset = [3, 6, 9, 12, 24, 48].includes(c.count);
   elements.genBatchPills.forEach(p => {
     p.classList.toggle('active', parseInt(p.dataset.count, 10) === c.count);
   });
+
+  if (elements.genBatchCustom) {
+    if (!isPreset && c.count) {
+      elements.genBatchCustom.value = c.count;
+      elements.genBatchCustom.classList.add('active');
+    } else {
+      elements.genBatchCustom.value = '';
+      elements.genBatchCustom.classList.remove('active');
+    }
+  }
 
   elements.genNumberSettings.style.display = c.numbers ? 'flex' : 'none';
   elements.genModeHint.textContent = MODE_HINTS[c.mode] || MODE_HINTS.say;
@@ -304,9 +318,9 @@ function generateNames(isUserAction = false) {
 
   if (isUserAction) {
     if (error) {
-      showToast(`⚠️ ${error}`);
+      showToast(error);
     } else if (items.length > 0) {
-      showToast(`✨ Generated ${items.length} fresh names!`);
+      showToast(`Generated ${items.length} fresh names!`);
     }
   }
 }
@@ -337,13 +351,21 @@ function applyGenFilter() {
   renderGenResults();
 }
 
+// Reusable SVG for GitHub icon
+const GITHUB_SVG_ICON = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>`;
+
 function renderGenResults() {
   elements.genStatsCount.textContent = genState.filteredResults.length;
 
   if (genState.filteredResults.length === 0) {
     elements.genCardsGrid.innerHTML = `
       <div class="empty-state">
-        <div class="empty-state-icon">🔍</div>
+        <div class="empty-state-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
         <h3>No names found</h3>
         <p>Try relaxing your exclusions, changing mode, or adjusting length.</p>
       </div>
@@ -359,43 +381,34 @@ function renderGenResults() {
     card.className = 'name-card card-enter';
     const favorited = isFavorite(item.text);
 
-    let tagClass = 'tag-pill';
-    if (item.mode === 'say') tagClass += ' tag-prefix';
-    else if (item.mode === 'read') tagClass += ' tag-letter';
-    else if (item.mode === 'memorable') tagClass += ' tag-suffix';
-    else if (item.mode === 'random') tagClass += ' tag-leet';
-
     card.innerHTML = `
       <div class="card-top">
-        <span class="card-text">${item.text}</span>
+        <span class="card-text" title="${item.text}">${item.text}</span>
+      </div>
+      <div class="card-bottom">
         <div class="card-actions">
           <button class="btn-card-icon btn-card-copy" title="Copy to clipboard">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
               <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
             </svg>
           </button>
           <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="Save to favorites">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
             </svg>
           </button>
         </div>
-      </div>
-      <div class="card-bottom">
-        <div class="card-tags">
-          <span class="${tagClass}">${item.tags[0] || item.rule}</span>
-        </div>
         <div class="card-checker">
+          <a class="btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X">X</a>
+          <a class="btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
           <button class="btn-check-link btn-card-tweak" title="Morph variations in Tweaker">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px;">
               <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
               <circle cx="12" cy="12" r="3"/>
             </svg>
             Tweak
           </button>
-          <a class="btn-check-link" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub">GH</a>
-          <a class="btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X">X</a>
         </div>
       </div>
     `;
@@ -456,7 +469,7 @@ function tweakGeneratedName(name) {
   elements.inputWord.value = name;
   switchSubcategory('tweaker');
   generate({ isUserAction: true });
-  showToast(`✨ Loaded "${name}" into Tweaker!`);
+  showToast(`Loaded "${name}" into Tweaker!`);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -603,7 +616,7 @@ function generate(options = {}) {
   }
 
   if (isUserAction && tweakerState.filteredResults.length > 0) {
-    showToast(`✨ Generated ${tweakerState.filteredResults.length} variations for "${word}"!`);
+    showToast(`Generated ${tweakerState.filteredResults.length} variations for "${word}"!`);
   }
 }
 
@@ -640,7 +653,13 @@ function renderResults() {
   if (!tweakerState.word) {
     elements.cardsGrid.innerHTML = `
       <div class="empty-state">
-        <div class="empty-state-icon">💡</div>
+        <div class="empty-state-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path>
+            <path d="M9 18h6"></path>
+            <path d="M10 22h4"></path>
+          </svg>
+        </div>
         <h3>No word entered</h3>
         <p>Type a username, handle, or brand name in the box above to generate variations.</p>
       </div>
@@ -651,7 +670,12 @@ function renderResults() {
   if (tweakerState.filteredResults.length === 0) {
     elements.cardsGrid.innerHTML = `
       <div class="empty-state">
-        <div class="empty-state-icon">🔍</div>
+        <div class="empty-state-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </div>
         <h3>No variations match your filters</h3>
         <p>Try enabling more categories in the sidebar or clearing your search filter.</p>
       </div>
@@ -677,29 +701,29 @@ function renderResults() {
 
     card.innerHTML = `
       <div class="card-top">
-        <span class="card-text">${item.text}</span>
-        <div class="card-actions">
-          <button class="btn-card-icon btn-card-copy" title="Copy to clipboard">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-            </svg>
-          </button>
-          <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="Save to favorites">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-            </svg>
-          </button>
-        </div>
+        <span class="card-text" title="${item.text}">${item.text}</span>
       </div>
       <div class="card-bottom">
-        <div class="card-tags">
+        <div class="card-bottom-left">
+          <div class="card-actions">
+            <button class="btn-card-icon btn-card-copy" title="Copy to clipboard">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+              </svg>
+            </button>
+            <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="Save to favorites">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </button>
+          </div>
           <span class="${tagClass}">${item.tags && item.tags[1] ? item.tags[1] : item.rule}</span>
         </div>
         <div class="card-checker">
           <span class="card-length">${item.text.length} chars</span>
-          <a class="btn-check-link" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub">GH</a>
           <a class="btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X">X</a>
+          <a class="btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
         </div>
       </div>
     `;
@@ -761,7 +785,11 @@ function updateFavoritesUI() {
   if (favorites.length === 0) {
     elements.drawerFavoritesList.innerHTML = `
       <div class="empty-state" style="padding: 2rem 1rem;">
-        <div class="empty-state-icon">⭐</div>
+        <div class="empty-state-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </div>
         <h4 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 0.25rem;">No saved names yet</h4>
         <p style="font-size: 0.8rem; color: var(--text-muted);">Click the star icon on any generated name to save it here.</p>
       </div>
@@ -787,7 +815,12 @@ function updateFavoritesUI() {
             <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
           </svg>
         </button>
-        <button class="btn-fav-delete" title="Remove">✕</button>
+        <button class="btn-fav-delete" title="Remove" aria-label="Remove">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
     `;
 
@@ -847,7 +880,7 @@ function setupEventListeners() {
           b.style.background = bg;
           b.innerHTML = `<span class="status-indicator" style="background: ${color};"></span><span class="status-text" style="color: ${color};">${st}</span>`;
         });
-        showToast(`🔍 Simulated check complete for "${query}"!`);
+        showToast(`Simulated check complete for "${query}"!`);
       }, 600);
     });
   }
@@ -860,30 +893,61 @@ function setupEventListeners() {
     });
   });
 
-  // Length Stepper & Range Slider
-  elements.genLenRange.addEventListener('input', () => {
-    const val = parseInt(elements.genLenRange.value, 10);
-    elements.genLenDisplay.textContent = val;
-    genState.config.length = val;
+  // Length Range Inputs with min/max validation
+  function commitMinLength() {
+    let minVal = parseInt(elements.genLenMin.value, 10);
+    const maxVal = parseInt(elements.genLenMax.value, 10) || 10;
+    if (isNaN(minVal) || minVal < 3) minVal = 3;
+    if (minVal > 32) minVal = 32;
+    // Check min isn't bigger than max; then it defaults to the same number as max
+    if (minVal > maxVal) {
+      minVal = maxVal;
+    }
+    elements.genLenMin.value = minVal;
+    genState.config.minLength = minVal;
     generateNames();
+  }
+
+  function commitMaxLength() {
+    let maxVal = parseInt(elements.genLenMax.value, 10);
+    const minVal = parseInt(elements.genLenMin.value, 10) || 3;
+    if (isNaN(maxVal) || maxVal > 32) maxVal = 32;
+    if (maxVal < 3) maxVal = 3;
+    // Vice versa: check max isn't smaller than min; then it defaults to the same number as min
+    if (maxVal < minVal) {
+      maxVal = minVal;
+    }
+    elements.genLenMax.value = maxVal;
+    genState.config.maxLength = maxVal;
+    generateNames();
+  }
+
+  elements.genLenMin.addEventListener('input', () => {
+    const minVal = parseInt(elements.genLenMin.value, 10);
+    const maxVal = parseInt(elements.genLenMax.value, 10);
+    if (!isNaN(minVal) && minVal >= 3 && minVal <= maxVal) {
+      genState.config.minLength = minVal;
+      generateNames();
+    }
+  });
+  elements.genLenMin.addEventListener('change', commitMinLength);
+  elements.genLenMin.addEventListener('blur', commitMinLength);
+  elements.genLenMin.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') elements.genLenMin.blur();
   });
 
-  elements.genLenMinus.addEventListener('click', () => {
-    let val = parseInt(elements.genLenRange.value, 10) - 1;
-    if (val < 4) val = 4;
-    elements.genLenRange.value = val;
-    elements.genLenDisplay.textContent = val;
-    genState.config.length = val;
-    generateNames();
+  elements.genLenMax.addEventListener('input', () => {
+    const maxVal = parseInt(elements.genLenMax.value, 10);
+    const minVal = parseInt(elements.genLenMin.value, 10);
+    if (!isNaN(maxVal) && maxVal <= 32 && maxVal >= minVal) {
+      genState.config.maxLength = maxVal;
+      generateNames();
+    }
   });
-
-  elements.genLenPlus.addEventListener('click', () => {
-    let val = parseInt(elements.genLenRange.value, 10) + 1;
-    if (val > 24) val = 24;
-    elements.genLenRange.value = val;
-    elements.genLenDisplay.textContent = val;
-    genState.config.length = val;
-    generateNames();
+  elements.genLenMax.addEventListener('change', commitMaxLength);
+  elements.genLenMax.addEventListener('blur', commitMaxLength);
+  elements.genLenMax.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') elements.genLenMax.blur();
   });
 
   // Batch Count Pills
@@ -891,15 +955,83 @@ function setupEventListeners() {
     pill.addEventListener('click', () => {
       elements.genBatchPills.forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
+      if (elements.genBatchCustom) {
+        elements.genBatchCustom.value = '';
+        elements.genBatchCustom.classList.remove('active');
+      }
       genState.config.count = parseInt(pill.dataset.count, 10);
       generateNames(true);
     });
   });
 
+  if (elements.genBatchCustom) {
+    const commitCustomBatch = () => {
+      let val = parseInt(elements.genBatchCustom.value, 10);
+      if (isNaN(val) || val < 1) {
+        const activePill = document.querySelector('.gen-batch-pills .qty-pill.active');
+        if (activePill) {
+          genState.config.count = parseInt(activePill.dataset.count, 10);
+          elements.genBatchCustom.value = '';
+          elements.genBatchCustom.classList.remove('active');
+          return;
+        }
+        val = 12;
+      }
+      if (val > 999) val = 999;
+      elements.genBatchCustom.value = val;
+      genState.config.count = val;
+
+      const matchingPill = Array.from(elements.genBatchPills).find(
+        p => parseInt(p.dataset.count, 10) === val
+      );
+      elements.genBatchPills.forEach(p => p.classList.remove('active'));
+      if (matchingPill) {
+        matchingPill.classList.add('active');
+        elements.genBatchCustom.classList.remove('active');
+      } else {
+        elements.genBatchCustom.classList.add('active');
+      }
+      generateNames(true);
+    };
+
+    elements.genBatchCustom.addEventListener('input', () => {
+      const raw = elements.genBatchCustom.value.trim();
+      if (raw !== '') {
+        let val = parseInt(raw, 10);
+        if (!isNaN(val)) {
+          if (val > 999) {
+            val = 999;
+            elements.genBatchCustom.value = 999;
+          }
+          if (val >= 1) {
+            genState.config.count = val;
+            const matchingPill = Array.from(elements.genBatchPills).find(
+              p => parseInt(p.dataset.count, 10) === val
+            );
+            elements.genBatchPills.forEach(p => p.classList.remove('active'));
+            if (matchingPill) {
+              matchingPill.classList.add('active');
+              elements.genBatchCustom.classList.remove('active');
+            } else {
+              elements.genBatchCustom.classList.add('active');
+            }
+          }
+        }
+      }
+    });
+    elements.genBatchCustom.addEventListener('change', commitCustomBatch);
+    elements.genBatchCustom.addEventListener('blur', commitCustomBatch);
+    elements.genBatchCustom.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        elements.genBatchCustom.blur();
+      }
+    });
+  }
+
   // Generator Checkboxes & Selects
   const genInputsToWatch = [
     elements.genOptLowercase, elements.genOptUppercase, elements.genOptNumbers, elements.genOptSymbols,
-    elements.genNumberPlacement, elements.genDigitCount, elements.genOptCasing,
+    elements.genNumberPlacement, elements.genDigitCount,
     elements.genAdvPrefix, elements.genAdvSuffix, elements.genAdvKeyword, elements.genAdvKeywordPos,
     elements.genAdvSeparator, elements.genAdvExclude, elements.genAdvStartLetter,
     elements.genAdvAvoidRepeats, elements.genAdvLeetspeak
@@ -922,13 +1054,20 @@ function setupEventListeners() {
   elements.genBtnSurprise.addEventListener('click', () => {
     const modes = ['say', 'read', 'memorable', 'random'];
     const randomMode = modes[Math.floor(Math.random() * modes.length)];
-    const randomLength = Math.floor(Math.random() * 9) + 6; // 6 to 14
-    const casings = ['none', 'first', 'camel'];
-    const randomCasing = casings[Math.floor(Math.random() * casings.length)];
+    const randomMin = Math.floor(Math.random() * 4) + 4; // 4 to 7
+    const randomMax = randomMin + Math.floor(Math.random() * 4) + 1; // min + 1..4
+    const caseCombos = [
+      { lowercase: true, uppercase: false },
+      { lowercase: false, uppercase: true },
+      { lowercase: true, uppercase: true }
+    ];
+    const pickedCase = caseCombos[Math.floor(Math.random() * caseCombos.length)];
 
     genState.config.mode = randomMode;
-    genState.config.length = randomLength;
-    genState.config.capitalize = randomCasing;
+    genState.config.minLength = randomMin;
+    genState.config.maxLength = randomMax;
+    genState.config.lowercase = pickedCase.lowercase;
+    genState.config.uppercase = pickedCase.uppercase;
     genState.config.numbers = Math.random() > 0.6;
     syncGenUIFromConfig();
     generateNames(true);
@@ -1014,7 +1153,7 @@ function setupEventListeners() {
   elements.inputCustomQty.addEventListener('change', () => {
     let val = parseInt(elements.inputCustomQty.value, 10);
     if (isNaN(val) || val < 5) val = 5;
-    if (val > 500) val = 500;
+    if (val > 999) val = 999;
     elements.inputCustomQty.value = val;
     tweakerState.targetCount = val;
 
