@@ -284,7 +284,7 @@ function readGenConfigFromUI() {
   } else {
     const activePill = document.querySelector('.gen-batch-pills .qty-pill.active');
     if (activePill) {
-      genState.config.count = parseInt(activePill.dataset.count, 10) || 12;
+      genState.config.count = parseInt(activePill.dataset.count, 10) || 16;
     }
   }
 
@@ -315,7 +315,7 @@ function syncGenUIFromConfig() {
   elements.genAdvAvoidRepeats.checked = !!c.avoidRepeats;
   elements.genAdvLeetspeak.checked = !!c.leetspeak;
 
-  const isPreset = [3, 6, 9, 12, 24, 48].includes(c.count);
+  const isPreset = [4, 8, 16, 32, 64].includes(c.count);
   elements.genBatchPills.forEach(p => {
     p.classList.toggle('active', parseInt(p.dataset.count, 10) === c.count);
   });
@@ -1181,7 +1181,7 @@ function setupEventListeners() {
           elements.genBatchCustom.classList.remove('active');
           return;
         }
-        val = 12;
+        val = 16;
       }
       if (val > 999) val = 999;
       elements.genBatchCustom.value = val;

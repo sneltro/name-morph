@@ -631,7 +631,7 @@ export const DEFAULT_GENERATOR_CONFIG = {
   mode: 'say',               // 'say' | 'read' | 'random' | 'memorable'
   minLength: 6,              // 3 to 25
   maxLength: 10,             // 3 to 25
-  count: 12,                 // 3, 6, 9, 12, 24, 48, or custom up to 999
+  count: 16,                 // 4, 8, 16, 32, 64, or custom up to 999
   lowercase: true,
   uppercase: false,
   numbers: false,
