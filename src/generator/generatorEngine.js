@@ -641,8 +641,6 @@ export const DEFAULT_GENERATOR_CONFIG = {
   prefix: '',
   suffix: '',
   keyword: '',
-  keywordPlacement: 'start', // 'start' | 'end'
-  separator: '',             // '' | '-' | '_' | '.'
   excludeChars: '',
   startWithLetter: true,
   avoidRepeats: false,
@@ -683,7 +681,6 @@ export function generateWordBatch(rawOptions = {}) {
 
   // Core length available for the root generated word
   let affixLen = o.prefix.length + o.suffix.length + o.keyword.length;
-  if (o.keyword && o.separator) affixLen += o.separator.length;
 
   const maxAttempts = Math.max(o.count * 60 + 200, 1000);
   let attempts = 0;
@@ -720,12 +717,10 @@ export function generateWordBatch(rawOptions = {}) {
       finished = applyNumbersByChance(finished, o);
     }
 
-    // Keyword attachment
+    // Keyword insertion at a random position in the generated word
     if (o.keyword) {
-      const sep = o.separator || '';
-      finished = o.keywordPlacement === 'end'
-        ? `${finished}${sep}${o.keyword}`
-        : `${o.keyword}${sep}${finished}`;
+      const insertIdx = secureRandomInt(finished.length + 1);
+      finished = finished.slice(0, insertIdx) + o.keyword + finished.slice(insertIdx);
     }
 
     // Leetspeak

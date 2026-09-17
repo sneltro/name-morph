@@ -13,7 +13,7 @@ import { generateVariations } from './transforms/engine.js';
 import { PRESETS } from './transforms/presets.js';
 import { getFavorites, saveFavorite, removeFavorite, isFavorite, clearAllFavorites } from './storage.js';
 import { generateWordBatch, DEFAULT_GENERATOR_CONFIG } from './generator/generatorEngine.js';
-import { DEFAULT_SYMBOLS, MINIMAL_SYMBOLS } from './generator/dictionaries.js';
+import { ALL_SYMBOLS, DEFAULT_SYMBOLS, MINIMAL_SYMBOLS } from './generator/dictionaries.js';
 
 // Random starter word bank for Tweaker
 const SAMPLE_WORDS = [
@@ -88,8 +88,6 @@ const elements = {
   genAdvPrefix: document.getElementById('gen-adv-prefix'),
   genAdvSuffix: document.getElementById('gen-adv-suffix'),
   genAdvKeyword: document.getElementById('gen-adv-keyword'),
-  genAdvKeywordPos: document.getElementById('gen-adv-keyword-pos'),
-  genAdvSeparator: document.getElementById('gen-adv-separator'),
   genAdvExclude: document.getElementById('gen-adv-exclude'),
   genAdvStartLetter: document.getElementById('gen-adv-start-letter'),
   genAdvAvoidRepeats: document.getElementById('gen-adv-avoid-repeats'),
@@ -221,7 +219,10 @@ function updateModeCompatibilityUI(mode) {
   const isSymbolsCompatible = mode === 'random';
 
   if (elements.genOptNumbersWrap) {
-    elements.genOptNumbersWrap.style.display = isNumbersCompatible ? 'flex' : 'none';
+    elements.genOptNumbersWrap.style.display = 'flex';
+    elements.genOptNumbersWrap.style.visibility = isNumbersCompatible ? 'visible' : 'hidden';
+    elements.genOptNumbersWrap.style.pointerEvents = isNumbersCompatible ? 'auto' : 'none';
+    elements.genOptNumbersWrap.setAttribute('aria-hidden', isNumbersCompatible ? 'false' : 'true');
   }
   if (!isNumbersCompatible) {
     if (elements.genOptNumbers) {
@@ -234,7 +235,10 @@ function updateModeCompatibilityUI(mode) {
   }
 
   if (elements.genOptSymbolsWrap) {
-    elements.genOptSymbolsWrap.style.display = isSymbolsCompatible ? 'flex' : 'none';
+    elements.genOptSymbolsWrap.style.display = 'flex';
+    elements.genOptSymbolsWrap.style.visibility = isSymbolsCompatible ? 'visible' : 'hidden';
+    elements.genOptSymbolsWrap.style.pointerEvents = isSymbolsCompatible ? 'auto' : 'none';
+    elements.genOptSymbolsWrap.setAttribute('aria-hidden', isSymbolsCompatible ? 'false' : 'true');
   }
   if (!isSymbolsCompatible) {
     if (elements.genOptSymbols) {
@@ -267,7 +271,7 @@ function renderSymbolChips() {
 
   const activeSymbols = new Set(String(genState.config.customSymbols || ''));
 
-  for (const sym of DEFAULT_SYMBOLS) {
+  for (const sym of ALL_SYMBOLS) {
     const chip = document.createElement('button');
     chip.type = 'button';
     chip.className = 'gen-symbol-chip' + (activeSymbols.has(sym) ? ' active' : '');
@@ -344,8 +348,6 @@ function readGenConfigFromUI() {
   genState.config.prefix = elements.genAdvPrefix.value;
   genState.config.suffix = elements.genAdvSuffix.value;
   genState.config.keyword = elements.genAdvKeyword.value;
-  genState.config.keywordPlacement = elements.genAdvKeywordPos.value;
-  genState.config.separator = elements.genAdvSeparator.value;
   genState.config.excludeChars = elements.genAdvExclude.value;
   genState.config.startWithLetter = elements.genAdvStartLetter.checked;
   genState.config.avoidRepeats = elements.genAdvAvoidRepeats.checked;
@@ -389,8 +391,6 @@ function syncGenUIFromConfig() {
   elements.genAdvPrefix.value = c.prefix || '';
   elements.genAdvSuffix.value = c.suffix || '';
   elements.genAdvKeyword.value = c.keyword || '';
-  elements.genAdvKeywordPos.value = c.keywordPlacement || 'start';
-  elements.genAdvSeparator.value = c.separator || '';
   elements.genAdvExclude.value = c.excludeChars || '';
   elements.genAdvStartLetter.checked = !!c.startWithLetter;
   elements.genAdvAvoidRepeats.checked = !!c.avoidRepeats;
@@ -1318,9 +1318,8 @@ function setupEventListeners() {
   // Generator Checkboxes & Selects
   const genInputsToWatch = [
     elements.genOptLowercase, elements.genOptUppercase, elements.genOptNumbers, elements.genOptSymbols,
-    elements.genAdvPrefix, elements.genAdvSuffix, elements.genAdvKeyword, elements.genAdvKeywordPos,
-    elements.genAdvSeparator, elements.genAdvExclude, elements.genAdvStartLetter,
-    elements.genAdvAvoidRepeats, elements.genAdvLeetspeak
+    elements.genAdvPrefix, elements.genAdvSuffix, elements.genAdvKeyword, elements.genAdvExclude,
+    elements.genAdvStartLetter, elements.genAdvAvoidRepeats, elements.genAdvLeetspeak
   ];
 
   genInputsToWatch.forEach(input => {
@@ -1332,6 +1331,12 @@ function setupEventListeners() {
           input.blur();
         }
       });
+      if (input.tagName === 'INPUT' && input.type === 'text') {
+        input.addEventListener('input', () => {
+          readGenConfigFromUI();
+          generateNames();
+        });
+      }
     }
   });
 
@@ -1346,7 +1351,7 @@ function setupEventListeners() {
 
   if (elements.btnSymbolsDefault) {
     elements.btnSymbolsDefault.addEventListener('click', () => {
-      setCustomSymbolsValue(DEFAULT_SYMBOLS);
+      setCustomSymbolsValue(ALL_SYMBOLS);
       elements.btnSymbolsDefault.blur();
     });
   }

@@ -192,12 +192,12 @@
             <label class="gen-section-label" for="gen-custom-symbols-input">Customize Symbols</label>
             <div class="gen-symbols-actions">
               <button type="button" id="btn-symbols-default" class="gen-symbols-action-btn" title="Reset to standard symbols">All</button>
-              <button type="button" id="btn-symbols-minimal" class="gen-symbols-action-btn" title="Only web-safe (- _ .)">Minimal</button>
+              <button type="button" id="btn-symbols-minimal" class="gen-symbols-action-btn" title="Minimal (- _ . , $)">Minimal</button>
               <button type="button" id="btn-symbols-clear" class="gen-symbols-action-btn" title="Clear all symbols">Clear</button>
             </div>
           </div>
           <div class="gen-symbols-input-wrap">
-            <input type="text" id="gen-custom-symbols-input" class="gen-symbols-input" placeholder="Type, paste, or toggle symbols..." spellcheck="false" autocomplete="off" value="!@#$%^&*()_+-=[]{}|;:,.<>?/~">
+            <input type="text" id="gen-custom-symbols-input" class="gen-symbols-input" placeholder="Type, paste, or toggle symbols..." spellcheck="false" autocomplete="off" value="-_.,$">
           </div>
           <div class="gen-symbols-chips-grid" id="gen-symbols-chips" aria-label="Toggle individual symbols">
             <!-- Dynamically populated symbol chips -->
@@ -207,7 +207,7 @@
         <!-- 5. Advanced Settings Collapsible -->
         <details class="gen-advanced-box">
           <summary class="gen-advanced-summary">
-            <span>Advanced Filters & Affixes</span>
+            <span>Advanced</span>
           </summary>
           <div class="gen-advanced-body">
             <div class="gen-adv-field">
@@ -221,22 +221,6 @@
             <div class="gen-adv-field">
               <label for="gen-adv-keyword">Keyword</label>
               <input type="text" id="gen-adv-keyword" placeholder="e.g. cloud, dev" maxlength="16" autocomplete="off" spellcheck="false">
-            </div>
-            <div class="gen-adv-field">
-              <label for="gen-adv-keyword-pos">Keyword Placement</label>
-              <select id="gen-adv-keyword-pos">
-                <option value="start">Prepend (keyword_name)</option>
-                <option value="end">Append (name_keyword)</option>
-              </select>
-            </div>
-            <div class="gen-adv-field">
-              <label for="gen-adv-separator">Separator</label>
-              <select id="gen-adv-separator">
-                <option value="">None (solid)</option>
-                <option value="-">Hyphen (-)</option>
-                <option value="_">Underscore (_)</option>
-                <option value=".">Dot (.)</option>
-              </select>
             </div>
             <div class="gen-adv-field">
               <label for="gen-adv-exclude">Exclude Characters</label>
