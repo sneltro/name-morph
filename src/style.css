@@ -36,6 +36,22 @@
   --warning: #f59e0b;
   --danger: #ef4444;
 
+  /* Pill & Badge Overlays */
+  --accent-pill-bg: rgba(139, 92, 246, 0.25);
+  --accent-pill-hover-bg: rgba(139, 92, 246, 0.35);
+  --accent-subtle-bg: rgba(139, 92, 246, 0.2);
+  --accent-nav-active-bg: rgba(139, 92, 246, 0.16);
+  --accent-simulated-bg: rgba(139, 92, 246, 0.12);
+  --success-pill-bg: rgba(16, 185, 129, 0.15);
+  --success-badge-bg: rgba(16, 185, 129, 0.2);
+  --warning-pill-bg: rgba(245, 158, 11, 0.12);
+  --warning-badge-bg: rgba(245, 158, 11, 0.18);
+  --cyan-badge-bg: rgba(6, 182, 212, 0.18);
+  --sky-pill-bg: rgba(56, 189, 248, 0.12);
+  --blue-pill-bg: rgba(59, 130, 246, 0.15);
+  --rose-pill-bg: rgba(244, 63, 94, 0.15);
+  --surface-icon-hover-bg: rgba(255, 255, 255, 0.08);
+
   /* Typography */
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
@@ -130,7 +146,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  background: rgba(139, 92, 246, 0.2);
+  background: var(--accent-subtle-bg);
   color: #c4b5fd;
   border: 1px solid rgba(139, 92, 246, 0.3);
   padding: 2px 6px;
@@ -297,7 +313,7 @@ body {
 }
 
 .qty-pill.active {
-  background: rgba(139, 92, 246, 0.25);
+  background: var(--accent-pill-bg);
   border-color: var(--accent-primary);
   color: #c4b5fd;
 }
@@ -322,7 +338,7 @@ body {
 }
 
 .qty-custom-input.active {
-  background: rgba(139, 92, 246, 0.25);
+  background: var(--accent-pill-bg);
   border-color: var(--accent-primary);
   color: #c4b5fd;
 }
@@ -418,7 +434,7 @@ body {
 }
 
 .preset-chip.active {
-  background: rgba(139, 92, 246, 0.2);
+  background: var(--accent-subtle-bg);
   border-color: var(--accent-primary);
   color: #e2e8f0;
   box-shadow: 0 0 12px rgba(139, 92, 246, 0.2);
@@ -451,9 +467,14 @@ body {
   top: 5rem;
   max-height: calc(100vh - 7rem);
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(139, 92, 246, 0.35) transparent;
   overscroll-behavior: contain;
+}
+
+@supports (scrollbar-width: thin) {
+  .sidebar-panel {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(139, 92, 246, 0.35) transparent;
+  }
 }
 
 .sidebar-panel::-webkit-scrollbar {
@@ -699,7 +720,7 @@ input:checked + .slider:before {
 }
 
 .btn-tool.copied {
-  background: rgba(16, 185, 129, 0.15) !important;
+  background: var(--success-pill-bg) !important;
   color: #34d399 !important;
   border-color: #10b981 !important;
   box-shadow: 0 0 10px rgba(16, 185, 129, 0.25) !important;
@@ -840,7 +861,7 @@ input:checked + .slider:before {
 
 .btn-card-icon:hover,
 .btn-check-link:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-icon-hover-bg);
   color: #38bdf8;
   border-color: rgba(56, 189, 248, 0.3);
 }
@@ -880,32 +901,32 @@ input:checked + .slider:before {
   font-weight: 700;
   padding: 2px 6px;
   border-radius: var(--radius-full);
-  background: rgba(56, 189, 248, 0.12);
+  background: var(--sky-pill-bg);
   color: #38bdf8;
   border: 1px solid rgba(56, 189, 248, 0.25);
 }
 
 .tag-pill.tag-leet {
-  background: rgba(16, 185, 129, 0.15);
+  background: var(--success-pill-bg);
   color: #6ee7b7;
   border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .tag-pill.tag-letter {
-  background: rgba(59, 130, 246, 0.15);
+  background: var(--blue-pill-bg);
   color: #93c5fd;
   border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
 .tag-pill.tag-prefix,
 .tag-pill.tag-suffix {
-  background: rgba(139, 92, 246, 0.15);
+  background: var(--accent-pill-bg);
   color: #c4b5fd;
   border: 1px solid rgba(139, 92, 246, 0.25);
 }
 
 .tag-pill.tag-vowel {
-  background: rgba(244, 63, 94, 0.15);
+  background: var(--rose-pill-bg);
   color: #fda4af;
   border: 1px solid rgba(244, 63, 94, 0.25);
 }
@@ -1153,7 +1174,12 @@ input:checked + .slider:before {
   justify-content: center;
   gap: 0.55rem;
   overflow-x: auto;
-  scrollbar-width: none;
+}
+
+@supports (scrollbar-width: none) {
+  .subcat-nav-inner {
+    scrollbar-width: none;
+  }
 }
 
 .subcat-nav-inner::-webkit-scrollbar {
@@ -1184,7 +1210,7 @@ input:checked + .slider:before {
 }
 
 .subcat-nav-btn.active {
-  background: rgba(139, 92, 246, 0.16);
+  background: var(--accent-nav-active-bg);
   border-color: rgba(139, 92, 246, 0.5);
   color: #fff;
   box-shadow: 0 0 20px rgba(139, 92, 246, 0.25);
@@ -1204,19 +1230,19 @@ input:checked + .slider:before {
 }
 
 .badge-new {
-  background: rgba(16, 185, 129, 0.2);
+  background: var(--success-badge-bg);
   color: #34d399;
   border: 1px solid rgba(16, 185, 129, 0.35);
 }
 
 .badge-stub {
-  background: rgba(245, 158, 11, 0.18);
+  background: var(--warning-badge-bg);
   color: #fbbf24;
   border: 1px solid rgba(245, 158, 11, 0.35);
 }
 
 .badge-morph {
-  background: rgba(6, 182, 212, 0.18);
+  background: var(--cyan-badge-bg);
   color: #67e8f9;
   border: 1px solid rgba(6, 182, 212, 0.35);
 }
@@ -1556,7 +1582,7 @@ input:checked + .slider:before {
 }
 
 .gen-symbol-chip.active {
-  background: rgba(139, 92, 246, 0.25);
+  background: var(--accent-pill-bg);
   border-color: var(--accent-primary);
   color: #c4b5fd;
   font-weight: 700;
@@ -1564,7 +1590,7 @@ input:checked + .slider:before {
 }
 
 .gen-symbol-chip.active:hover {
-  background: rgba(139, 92, 246, 0.35);
+  background: var(--accent-pill-hover-bg);
   border-color: #a78bfa;
   color: #fff;
 }
@@ -1692,7 +1718,7 @@ input:checked + .slider:before {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(245, 158, 11, 0.12);
+  background: var(--warning-pill-bg);
   border: 1px solid rgba(245, 158, 11, 0.35);
   color: #fbbf24;
   font-size: 0.78rem;
@@ -1880,7 +1906,7 @@ input:checked + .slider:before {
 }
 
 .status-simulated {
-  background: rgba(139, 92, 246, 0.12);
+  background: var(--accent-simulated-bg);
   border: 1px solid rgba(139, 92, 246, 0.25);
   color: #c4b5fd;
 }
