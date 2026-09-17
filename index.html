@@ -72,7 +72,7 @@
   <section id="view-generator" class="subcat-view active">
     <div class="main-container">
       <!-- Left Controls Sidebar -->
-      <aside class="sidebar-panel gen-controls-panel">
+      <aside class="sidebar-panel gen-controls-panel" aria-label="Username generator controls">
         <div class="sidebar-header">
           <div class="sidebar-title">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -86,7 +86,7 @@
 
         <!-- 1. Generation Mode / Style -->
         <div class="gen-section">
-          <label class="gen-section-label">Generation Mode</label>
+          <span class="gen-section-label">Generation Mode</span>
           <div class="gen-modes-grid" role="radiogroup" aria-label="Style mode">
             <label class="gen-mode-chip">
               <input type="radio" name="gen-mode" value="say" checked>
@@ -152,7 +152,7 @@
 
         <!-- 3. Quantity / Batch Size -->
         <div class="gen-section">
-          <label class="gen-section-label">Batch Size</label>
+          <span class="gen-section-label">Batch Size</span>
           <div class="qty-pills gen-batch-pills">
             <button type="button" class="qty-pill" data-count="4">4</button>
             <button type="button" class="qty-pill" data-count="8">8</button>
@@ -165,7 +165,7 @@
 
         <!-- 4. Character Components -->
         <div class="gen-section">
-          <label class="gen-section-label">Character Types</label>
+          <span class="gen-section-label">Character Types</span>
           <div class="gen-toggles-grid">
             <label class="checkbox-label">
               <input type="checkbox" id="gen-opt-lowercase" checked>
@@ -269,7 +269,7 @@
           </div>
 
           <div class="toolbar-actions">
-            <select id="gen-select-sort" class="sort-select" title="Sort names">
+            <select id="gen-select-sort" class="sort-select" title="Sort names" aria-label="Sort generated names">
               <option value="random">Random</option>
               <option value="shortest">Shortest First</option>
               <option value="longest">Longest First</option>
@@ -281,6 +281,7 @@
               class="search-filter-input" 
               placeholder="Filter names..." 
               autocomplete="off"
+              aria-label="Filter names"
             >
             <button id="gen-btn-copy-all" class="btn-tool" title="Copy all currently shown names">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -348,6 +349,7 @@
               placeholder="Type a username to simulate multi-platform availability..."
               value="nexus"
               autocomplete="off"
+              aria-label="Username to check availability"
             >
             <button id="btn-checker-simulate" class="btn-primary checker-check-btn">
               <span>Simulate Check</span>
@@ -531,6 +533,7 @@
               value="nexus"
               autocomplete="off"
               spellcheck="false"
+              aria-label="Username or brand to morph"
             >
             <button id="btn-clear-input" class="input-clear-btn" title="Clear input" aria-label="Clear input">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -549,7 +552,7 @@
               <button class="qty-pill" data-qty="100">100</button>
               <button class="qty-pill" data-qty="200">200</button>
             </div>
-            <input type="number" id="input-custom-qty" class="qty-custom-input" min="5" max="999" value="50" title="Custom quantity">
+            <input type="number" id="input-custom-qty" class="qty-custom-input" min="5" max="999" value="50" title="Custom quantity" aria-label="Custom quantity">
           </div>
 
           <!-- Generate Buttons -->
@@ -589,7 +592,7 @@
     <div class="main-container">
       
       <!-- Left Configuration Sidebar -->
-      <aside class="sidebar-panel">
+      <aside class="sidebar-panel" aria-label="Tweaker rules configuration">
         <div class="sidebar-header">
           <div class="sidebar-title">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -615,8 +618,8 @@
               <span>Leet Speak</span>
               <span class="rule-group-badge">Numbers</span>
             </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-enable-leet" checked>
+            <label class="switch" aria-label="Toggle Leet Speak">
+              <input type="checkbox" id="toggle-enable-leet" checked aria-label="Toggle Leet Speak">
               <span class="slider"></span>
             </label>
           </div>
@@ -643,8 +646,8 @@
               <span>Letter Replacements</span>
               <span class="rule-group-badge">Alphabetical</span>
             </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-enable-letter-swaps" checked>
+            <label class="switch" aria-label="Toggle Letter Replacements">
+              <input type="checkbox" id="toggle-enable-letter-swaps" checked aria-label="Toggle Letter Replacements">
               <span class="slider"></span>
             </label>
           </div>
@@ -667,8 +670,8 @@
               <span>Prefixes</span>
               <span class="rule-group-badge">Prepend</span>
             </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-enable-prefixes" checked>
+            <label class="switch" aria-label="Toggle Prefixes">
+              <input type="checkbox" id="toggle-enable-prefixes" checked aria-label="Toggle Prefixes">
               <span class="slider"></span>
             </label>
           </div>
@@ -695,8 +698,8 @@
               <span>Suffixes</span>
               <span class="rule-group-badge">Append</span>
             </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-enable-suffixes" checked>
+            <label class="switch" aria-label="Toggle Suffixes">
+              <input type="checkbox" id="toggle-enable-suffixes" checked aria-label="Toggle Suffixes">
               <span class="slider"></span>
             </label>
           </div>
@@ -723,8 +726,8 @@
               <span>Vowel Modifications</span>
               <span class="rule-group-badge">Vowels</span>
             </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-enable-vowels" checked>
+            <label class="switch" aria-label="Toggle Vowel Modifications">
+              <input type="checkbox" id="toggle-enable-vowels" checked aria-label="Toggle Vowel Modifications">
               <span class="slider"></span>
             </label>
           </div>
@@ -751,8 +754,8 @@
               <span>Letter Extensions</span>
               <span class="rule-group-badge">Repeat</span>
             </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-enable-extensions" checked>
+            <label class="switch" aria-label="Toggle Letter Extensions">
+              <input type="checkbox" id="toggle-enable-extensions" checked aria-label="Toggle Letter Extensions">
               <span class="slider"></span>
             </label>
           </div>
@@ -765,8 +768,8 @@
               <span>Gamer Framing & Delimiters</span>
               <span class="rule-group-badge">Tags</span>
             </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-enable-framing" checked>
+            <label class="switch" aria-label="Toggle Gamer Framing and Delimiters">
+              <input type="checkbox" id="toggle-enable-framing" checked aria-label="Toggle Gamer Framing and Delimiters">
               <span class="slider"></span>
             </label>
           </div>
@@ -785,8 +788,8 @@
               <span>Stylized Casing</span>
               <span class="rule-group-badge">Case</span>
             </div>
-            <label class="switch">
-              <input type="checkbox" id="toggle-enable-casing" checked>
+            <label class="switch" aria-label="Toggle Stylized Casing">
+              <input type="checkbox" id="toggle-enable-casing" checked aria-label="Toggle Stylized Casing">
               <span class="slider"></span>
             </label>
           </div>
@@ -802,7 +805,7 @@
           </div>
 
           <div class="toolbar-actions">
-            <select id="select-sort" class="sort-select" title="Sort / Shuffle Variations">
+            <select id="select-sort" class="sort-select" title="Sort / Shuffle Variations" aria-label="Sort variations">
               <option value="random">Random (Fresh)</option>
               <option value="shortest">Shortest First</option>
               <option value="longest">Longest First</option>
@@ -814,6 +817,7 @@
               class="search-filter-input" 
               placeholder="Filter results..."
               autocomplete="off"
+              aria-label="Filter variations"
             >
             <button id="btn-copy-all" class="btn-tool" title="Copy all currently shown names to clipboard">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -855,7 +859,7 @@
 
   <!-- Offcanvas Saved Favorites Drawer -->
   <div id="drawer-backdrop" class="drawer-backdrop"></div>
-  <aside id="favorites-drawer" class="favorites-drawer">
+  <aside id="favorites-drawer" class="favorites-drawer" aria-label="Saved favorites drawer">
     <div class="drawer-header">
       <div class="drawer-title">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="#fbbf24" stroke="#fbbf24" stroke-width="1.5">

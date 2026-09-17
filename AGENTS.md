@@ -9,6 +9,7 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
 
 Before implementing:
+
 - State your assumptions explicitly. If uncertain, ask.
 - If multiple interpretations exist, present them - don't pick silently.
 - If a simpler approach exists, say so. Push back when warranted.
@@ -31,12 +32,14 @@ Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, sim
 **Touch only what you must. Clean up only your own mess.**
 
 When editing existing code:
+
 - Don't "improve" adjacent code, comments, or formatting.
 - Don't refactor things that aren't broken.
 - Match existing style, even if you'd do it differently.
 - If you notice unrelated dead code, mention it - don't delete it.
 
 When your changes create orphans:
+
 - Remove imports/variables/functions that YOUR changes made unused.
 - Don't remove pre-existing dead code unless asked.
 
@@ -47,12 +50,14 @@ The test: Every changed line should trace directly to the user's request.
 **Define success criteria. Loop until verified.**
 
 Transform tasks into verifiable goals:
+
 - "Add validation" → "Write tests for invalid inputs, then make them pass"
 - "Fix the bug" → "Write a test that reproduces it, then make it pass"
 - "Refactor X" → "Ensure tests pass before and after"
 
 For multi-step tasks, state a brief plan:
-```
+
+```text
 1. [Step] → verify: [check]
 2. [Step] → verify: [check]
 3. [Step] → verify: [check]
@@ -80,15 +85,16 @@ NameMorph is a client-side username and brand name variation generator (Vanilla 
 | **Styles & Dark Theme** | `src/style.css` | Dark mode styling, CSS grid, micro-interactions, responsive layout. |
 
 ### Architectural Invariants
+
 - **Client-Side Only**: Zero backend dependencies, no server state or external databases.
 - **Pure Transforms**: Keep `src/transforms/` pure, decoupled from the DOM, returning `{ text, rule, tags }`.
 - **Deduplication**: Enforce root-word exclusion and unique variation results in `engine.js`.
 
 ### Browser & Environment Invariants
+
 - **NEVER use browser subagent or browser tools** to open tabs/windows in the user's Google Chrome or local environment.
 - Local dev server runs on `http://localhost:5182` with `open: false`.
 - Never attempt to launch or automate external browsers. Use terminal commands or unit tests for validation.
-
 
 ---
 
