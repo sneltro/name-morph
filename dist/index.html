@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NameMorph — Username Generator, Checker & Tweaker</title>
   <meta name="description" content="Generate fresh handles, check handle availability, and customize variations with leet speak, letter swaps, affixes, and styling.">
-  <script type="module" crossorigin src="/assets/index-ddasI2QY.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-Dvcc3H4n.css">
+  <script type="module" crossorigin src="/assets/index-DxZTJtqB.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BXGDj4O1.css">
 </head>
 <body>
 
@@ -71,14 +71,6 @@
   <!-- SUBCATEGORY 1: USERNAME GENERATOR (NEW)                                  -->
   <!-- ======================================================================= -->
   <section id="view-generator" class="subcat-view active">
-    <!-- Generator Hero -->
-    <div class="gen-hero">
-      <div class="gen-hero-content">
-        <h2>Generate Fresh Words & Usernames</h2>
-        <p class="gen-lead">Pronounceable syllables, typo-resistant handles, random keys, or memorable word pairs — generated securely in your browser.</p>
-      </div>
-    </div>
-
     <div class="main-container">
       <!-- Left Controls Sidebar -->
       <aside class="sidebar-panel gen-controls-panel">
@@ -108,7 +100,7 @@
               <input type="radio" name="gen-mode" value="read">
               <div class="gen-mode-content">
                 <span class="gen-mode-title">Easy to Read</span>
-                <span class="gen-mode-desc">No 0/O/1/l lookalikes</span>
+                <span class="gen-mode-desc">No lookalikes</span>
               </div>
             </label>
             <label class="gen-mode-chip">
@@ -139,10 +131,10 @@
                 id="gen-len-min" 
                 class="gen-range-input" 
                 min="3" 
-                max="32" 
+                max="25" 
                 value="6"
                 aria-label="Minimum length"
-                title="Minimum length (3-32)"
+                title="Minimum length (3-25)"
               >
               <span class="gen-range-sep">&mdash;</span>
               <input 
@@ -150,10 +142,10 @@
                 id="gen-len-max" 
                 class="gen-range-input" 
                 min="3" 
-                max="32" 
+                max="25" 
                 value="10"
                 aria-label="Maximum length"
-                title="Maximum length (3-32)"
+                title="Maximum length (3-25)"
               >
             </div>
           </div>
@@ -163,13 +155,12 @@
         <div class="gen-section">
           <label class="gen-section-label">Batch Size</label>
           <div class="qty-pills gen-batch-pills">
-            <button type="button" class="qty-pill" data-count="3">3</button>
-            <button type="button" class="qty-pill" data-count="6">6</button>
-            <button type="button" class="qty-pill" data-count="9">9</button>
-            <button type="button" class="qty-pill active" data-count="12">12</button>
-            <button type="button" class="qty-pill" data-count="24">24</button>
-            <button type="button" class="qty-pill" data-count="48">48</button>
-            <input type="number" id="gen-batch-custom" class="qty-custom-input gen-batch-custom" min="1" max="999" placeholder="Custom" title="Custom batch size (1-999)" aria-label="Custom batch size">
+            <button type="button" class="qty-pill" data-count="4">4</button>
+            <button type="button" class="qty-pill" data-count="8">8</button>
+            <button type="button" class="qty-pill active" data-count="16">16</button>
+            <button type="button" class="qty-pill" data-count="32">32</button>
+            <button type="button" class="qty-pill" data-count="64">64</button>
+            <input type="number" id="gen-batch-custom" class="qty-custom-input gen-batch-custom" min="1" max="999" placeholder="Cus" title="Custom batch size (1-999)" aria-label="Custom batch size">
           </div>
         </div>
 
@@ -185,42 +176,39 @@
               <input type="checkbox" id="gen-opt-uppercase">
               <span>Uppercase</span>
             </label>
-            <label class="checkbox-label">
+            <label class="checkbox-label" id="gen-opt-numbers-wrap">
               <input type="checkbox" id="gen-opt-numbers">
               <span>Numbers</span>
             </label>
-            <label class="checkbox-label">
+            <label class="checkbox-label" id="gen-opt-symbols-wrap">
               <input type="checkbox" id="gen-opt-symbols">
-              <span>Symbols (- _ .)</span>
+              <span>Symbols</span>
             </label>
           </div>
+        </div>
 
-          <!-- Extra number controls when Numbers is enabled -->
-          <div id="gen-number-settings" class="gen-sub-settings" style="display: none;">
-            <div class="gen-input-row">
-              <label class="gen-mini-label" for="gen-number-placement">Number Position</label>
-              <select id="gen-number-placement" class="sort-select">
-                <option value="end" selected>End (handle27)</option>
-                <option value="start">Start (27handle)</option>
-                <option value="anywhere">Anywhere (han27dle)</option>
-              </select>
+        <!-- Customize Symbols Section (visible only when Symbols is enabled) -->
+        <div class="gen-section" id="gen-symbols-custom-section" style="display: none;">
+          <div class="gen-section-header">
+            <label class="gen-section-label" for="gen-custom-symbols-input">Customize Symbols</label>
+            <div class="gen-symbols-actions">
+              <button type="button" id="btn-symbols-default" class="gen-symbols-action-btn" title="Reset to standard symbols">All</button>
+              <button type="button" id="btn-symbols-minimal" class="gen-symbols-action-btn" title="Minimal (- _ . , $)">Minimal</button>
+              <button type="button" id="btn-symbols-clear" class="gen-symbols-action-btn" title="Clear all symbols">Clear</button>
             </div>
-            <div class="gen-input-row">
-              <label class="gen-mini-label" for="gen-digit-count">Digit Count</label>
-              <select id="gen-digit-count" class="sort-select">
-                <option value="1">1 digit</option>
-                <option value="2" selected>2 digits</option>
-                <option value="3">3 digits</option>
-                <option value="4">4 digits (e.g. year)</option>
-              </select>
-            </div>
+          </div>
+          <div class="gen-symbols-input-wrap">
+            <input type="text" id="gen-custom-symbols-input" class="gen-symbols-input" placeholder="Type, paste, or toggle symbols..." spellcheck="false" autocomplete="off" value="-_.,$">
+          </div>
+          <div class="gen-symbols-chips-grid" id="gen-symbols-chips" aria-label="Toggle individual symbols">
+            <!-- Dynamically populated symbol chips -->
           </div>
         </div>
 
         <!-- 5. Advanced Settings Collapsible -->
         <details class="gen-advanced-box">
           <summary class="gen-advanced-summary">
-            <span>Advanced Filters & Affixes</span>
+            <span>Advanced</span>
           </summary>
           <div class="gen-advanced-body">
             <div class="gen-adv-field">
@@ -234,22 +222,6 @@
             <div class="gen-adv-field">
               <label for="gen-adv-keyword">Keyword</label>
               <input type="text" id="gen-adv-keyword" placeholder="e.g. cloud, dev" maxlength="16" autocomplete="off" spellcheck="false">
-            </div>
-            <div class="gen-adv-field">
-              <label for="gen-adv-keyword-pos">Keyword Placement</label>
-              <select id="gen-adv-keyword-pos">
-                <option value="start">Prepend (keyword_name)</option>
-                <option value="end">Append (name_keyword)</option>
-              </select>
-            </div>
-            <div class="gen-adv-field">
-              <label for="gen-adv-separator">Separator</label>
-              <select id="gen-adv-separator">
-                <option value="">None (solid)</option>
-                <option value="-">Hyphen (-)</option>
-                <option value="_">Underscore (_)</option>
-                <option value=".">Dot (.)</option>
-              </select>
             </div>
             <div class="gen-adv-field">
               <label for="gen-adv-exclude">Exclude Characters</label>
@@ -274,14 +246,14 @@
 
         <!-- Generate Buttons -->
         <div class="gen-actions-box">
-          <button id="gen-btn-generate" class="btn-primary gen-btn-main">
+          <button id="gen-btn-generate" class="btn-primary gen-btn-main" title="Generate Names (Space)">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M5.6 18.4l2.1-2.1m8.6-8.6 2.1-2.1"/>
             </svg>
             <span>Generate Names</span>
           </button>
           <button id="gen-btn-surprise" class="btn-secondary gen-btn-surprise" title="Roll completely random settings">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
             </svg>
             <span>Surprise Me!</span>

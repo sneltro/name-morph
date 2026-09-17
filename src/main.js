@@ -13,6 +13,7 @@ import { generateVariations } from './transforms/engine.js';
 import { PRESETS } from './transforms/presets.js';
 import { getFavorites, saveFavorite, removeFavorite, isFavorite, clearAllFavorites } from './storage.js';
 import { generateWordBatch, DEFAULT_GENERATOR_CONFIG } from './generator/generatorEngine.js';
+import { ALL_SYMBOLS, DEFAULT_SYMBOLS, MINIMAL_SYMBOLS } from './generator/dictionaries.js';
 
 // Random starter word bank for Tweaker
 const SAMPLE_WORDS = [
@@ -75,15 +76,18 @@ const elements = {
   genOptLowercase: document.getElementById('gen-opt-lowercase'),
   genOptUppercase: document.getElementById('gen-opt-uppercase'),
   genOptNumbers: document.getElementById('gen-opt-numbers'),
+  genOptNumbersWrap: document.getElementById('gen-opt-numbers-wrap'),
   genOptSymbols: document.getElementById('gen-opt-symbols'),
-  genNumberSettings: document.getElementById('gen-number-settings'),
-  genNumberPlacement: document.getElementById('gen-number-placement'),
-  genDigitCount: document.getElementById('gen-digit-count'),
+  genOptSymbolsWrap: document.getElementById('gen-opt-symbols-wrap'),
+  genSymbolsCustomSection: document.getElementById('gen-symbols-custom-section'),
+  genCustomSymbolsInput: document.getElementById('gen-custom-symbols-input'),
+  genSymbolsChips: document.getElementById('gen-symbols-chips'),
+  btnSymbolsDefault: document.getElementById('btn-symbols-default'),
+  btnSymbolsMinimal: document.getElementById('btn-symbols-minimal'),
+  btnSymbolsClear: document.getElementById('btn-symbols-clear'),
   genAdvPrefix: document.getElementById('gen-adv-prefix'),
   genAdvSuffix: document.getElementById('gen-adv-suffix'),
   genAdvKeyword: document.getElementById('gen-adv-keyword'),
-  genAdvKeywordPos: document.getElementById('gen-adv-keyword-pos'),
-  genAdvSeparator: document.getElementById('gen-adv-separator'),
   genAdvExclude: document.getElementById('gen-adv-exclude'),
   genAdvStartLetter: document.getElementById('gen-adv-start-letter'),
   genAdvAvoidRepeats: document.getElementById('gen-adv-avoid-repeats'),
@@ -202,39 +206,148 @@ function switchSubcategory(tabId) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MODE_HINTS = {
-  say: 'Natural, pronounceable names built from phonetic English syllables (e.g., velora, talmir).',
-  read: 'Characters constrained to avoid confusing lookalikes like 0/O and 1/l/I. Easy to read and type.',
-  memorable: 'Memorable compound handles formed by combining evocative adjectives and nouns (e.g., swift-falcon, amber_ridge).',
-  random: 'True pseudorandom combinations from enabled character sets (lowercase, uppercase, numbers, symbols).'
+  say: 'Natural, pronounceable names built from phonetic English syllables (e.g. velora, talmir).',
+  read: 'Characters constrained to avoid confusing lookalikes like 0/O and 1/l/I.',
+  memorable: 'Compound handles formed by combining adjectives and nouns (e.g. swiftfox, ambergal).',
+  random: 'Any pseudorandom combinations from enabled character sets.'
 };
+
+function updateModeCompatibilityUI(mode) {
+  // Numbers are disabled for "say" and "read"
+  const isNumbersCompatible = mode !== 'say' && mode !== 'read';
+  // Symbols are only compatible with "random" mode
+  const isSymbolsCompatible = mode === 'random';
+
+  if (elements.genOptNumbersWrap) {
+    elements.genOptNumbersWrap.style.display = 'flex';
+    elements.genOptNumbersWrap.style.visibility = isNumbersCompatible ? 'visible' : 'hidden';
+    elements.genOptNumbersWrap.style.pointerEvents = isNumbersCompatible ? 'auto' : 'none';
+    elements.genOptNumbersWrap.setAttribute('aria-hidden', isNumbersCompatible ? 'false' : 'true');
+  }
+  if (!isNumbersCompatible) {
+    if (elements.genOptNumbers) {
+      elements.genOptNumbers.checked = false;
+      elements.genOptNumbers.disabled = true;
+    }
+    genState.config.numbers = false;
+  } else if (elements.genOptNumbers) {
+    elements.genOptNumbers.disabled = false;
+  }
+
+  if (elements.genOptSymbolsWrap) {
+    elements.genOptSymbolsWrap.style.display = 'flex';
+    elements.genOptSymbolsWrap.style.visibility = isSymbolsCompatible ? 'visible' : 'hidden';
+    elements.genOptSymbolsWrap.style.pointerEvents = isSymbolsCompatible ? 'auto' : 'none';
+    elements.genOptSymbolsWrap.setAttribute('aria-hidden', isSymbolsCompatible ? 'false' : 'true');
+  }
+  if (!isSymbolsCompatible) {
+    if (elements.genOptSymbols) {
+      elements.genOptSymbols.checked = false;
+      elements.genOptSymbols.disabled = true;
+    }
+    genState.config.symbols = false;
+  } else if (elements.genOptSymbols) {
+    elements.genOptSymbols.disabled = false;
+  }
+
+  updateCustomizeSymbolsVisibility();
+}
+
+function updateCustomizeSymbolsVisibility() {
+  const isSymbolsCompatible = genState.config.mode === 'random';
+  const isSymbolsActive = isSymbolsCompatible &&
+                          elements.genOptSymbols &&
+                          !elements.genOptSymbols.disabled &&
+                          elements.genOptSymbols.checked;
+
+  if (elements.genSymbolsCustomSection) {
+    elements.genSymbolsCustomSection.style.display = isSymbolsActive ? 'flex' : 'none';
+  }
+}
+
+function renderSymbolChips() {
+  if (!elements.genSymbolsChips) return;
+  elements.genSymbolsChips.innerHTML = '';
+
+  const activeSymbols = new Set(String(genState.config.customSymbols || ''));
+
+  for (const sym of ALL_SYMBOLS) {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'gen-symbol-chip' + (activeSymbols.has(sym) ? ' active' : '');
+    chip.dataset.symbol = sym;
+    chip.textContent = sym;
+    chip.title = `Toggle ${sym}`;
+
+    chip.addEventListener('click', () => {
+      toggleCustomSymbol(sym);
+    });
+
+    elements.genSymbolsChips.appendChild(chip);
+  }
+}
+
+function syncSymbolChipsState() {
+  if (!elements.genSymbolsChips) return;
+  const activeSymbols = new Set(String(genState.config.customSymbols || ''));
+  const chips = elements.genSymbolsChips.querySelectorAll('.gen-symbol-chip');
+  chips.forEach(chip => {
+    const sym = chip.dataset.symbol;
+    chip.classList.toggle('active', activeSymbols.has(sym));
+  });
+}
+
+function toggleCustomSymbol(sym) {
+  let current = String(elements.genCustomSymbolsInput ? elements.genCustomSymbolsInput.value : genState.config.customSymbols || '');
+  if (current.includes(sym)) {
+    current = current.replaceAll(sym, '');
+  } else {
+    current += sym;
+  }
+  setCustomSymbolsValue(current);
+}
+
+function setCustomSymbolsValue(newSymbols) {
+  genState.config.customSymbols = newSymbols;
+  if (elements.genCustomSymbolsInput) {
+    elements.genCustomSymbolsInput.value = newSymbols;
+  }
+  syncSymbolChipsState();
+  generateNames();
+}
 
 function readGenConfigFromUI() {
   const selectedMode = document.querySelector('input[name="gen-mode"]:checked');
   if (selectedMode) {
     genState.config.mode = selectedMode.value;
   }
+  updateModeCompatibilityUI(genState.config.mode);
 
   let minVal = parseInt(elements.genLenMin.value, 10);
   let maxVal = parseInt(elements.genLenMax.value, 10);
   if (isNaN(minVal) || minVal < 3) minVal = 3;
-  if (minVal > 32) minVal = 32;
+  if (minVal > 25) minVal = 25;
   if (isNaN(maxVal) || maxVal < 3) maxVal = 3;
-  if (maxVal > 32) maxVal = 32;
+  if (maxVal > 25) maxVal = 25;
   if (minVal > maxVal) minVal = maxVal;
   genState.config.minLength = minVal;
   genState.config.maxLength = maxVal;
   genState.config.lowercase = elements.genOptLowercase.checked;
   genState.config.uppercase = elements.genOptUppercase.checked;
-  genState.config.numbers = elements.genOptNumbers.checked;
-  genState.config.symbols = elements.genOptSymbols.checked;
-  genState.config.numberPlacement = elements.genNumberPlacement.value;
-  genState.config.digitCount = parseInt(elements.genDigitCount.value, 10) || 2;
+  genState.config.numbers = elements.genOptNumbers && !elements.genOptNumbers.disabled
+    ? elements.genOptNumbers.checked
+    : false;
+  genState.config.symbols = elements.genOptSymbols && !elements.genOptSymbols.disabled
+    ? elements.genOptSymbols.checked
+    : false;
+  if (elements.genCustomSymbolsInput) {
+    genState.config.customSymbols = elements.genCustomSymbolsInput.value;
+  }
+  updateCustomizeSymbolsVisibility();
 
   genState.config.prefix = elements.genAdvPrefix.value;
   genState.config.suffix = elements.genAdvSuffix.value;
   genState.config.keyword = elements.genAdvKeyword.value;
-  genState.config.keywordPlacement = elements.genAdvKeywordPos.value;
-  genState.config.separator = elements.genAdvSeparator.value;
   genState.config.excludeChars = elements.genAdvExclude.value;
   genState.config.startWithLetter = elements.genAdvStartLetter.checked;
   genState.config.avoidRepeats = elements.genAdvAvoidRepeats.checked;
@@ -249,11 +362,10 @@ function readGenConfigFromUI() {
   } else {
     const activePill = document.querySelector('.gen-batch-pills .qty-pill.active');
     if (activePill) {
-      genState.config.count = parseInt(activePill.dataset.count, 10) || 12;
+      genState.config.count = parseInt(activePill.dataset.count, 10) || 16;
     }
   }
 
-  elements.genNumberSettings.style.display = genState.config.numbers ? 'flex' : 'none';
   elements.genModeHint.textContent = MODE_HINTS[genState.config.mode] || MODE_HINTS.say;
 }
 
@@ -262,6 +374,7 @@ function syncGenUIFromConfig() {
   elements.genModeInputs.forEach(input => {
     input.checked = input.value === c.mode;
   });
+  updateModeCompatibilityUI(c.mode);
 
   elements.genLenMin.value = c.minLength || 6;
   elements.genLenMax.value = c.maxLength || 10;
@@ -269,20 +382,21 @@ function syncGenUIFromConfig() {
   elements.genOptUppercase.checked = !!c.uppercase;
   elements.genOptNumbers.checked = !!c.numbers;
   elements.genOptSymbols.checked = !!c.symbols;
-  elements.genNumberPlacement.value = c.numberPlacement || 'end';
-  elements.genDigitCount.value = String(c.digitCount || 2);
+  if (elements.genCustomSymbolsInput) {
+    elements.genCustomSymbolsInput.value = c.customSymbols !== undefined ? c.customSymbols : DEFAULT_SYMBOLS;
+  }
+  syncSymbolChipsState();
+  updateCustomizeSymbolsVisibility();
 
   elements.genAdvPrefix.value = c.prefix || '';
   elements.genAdvSuffix.value = c.suffix || '';
   elements.genAdvKeyword.value = c.keyword || '';
-  elements.genAdvKeywordPos.value = c.keywordPlacement || 'start';
-  elements.genAdvSeparator.value = c.separator || '';
   elements.genAdvExclude.value = c.excludeChars || '';
   elements.genAdvStartLetter.checked = !!c.startWithLetter;
   elements.genAdvAvoidRepeats.checked = !!c.avoidRepeats;
   elements.genAdvLeetspeak.checked = !!c.leetspeak;
 
-  const isPreset = [3, 6, 9, 12, 24, 48].includes(c.count);
+  const isPreset = [4, 8, 16, 32, 64].includes(c.count);
   elements.genBatchPills.forEach(p => {
     p.classList.toggle('active', parseInt(p.dataset.count, 10) === c.count);
   });
@@ -297,7 +411,6 @@ function syncGenUIFromConfig() {
     }
   }
 
-  elements.genNumberSettings.style.display = c.numbers ? 'flex' : 'none';
   elements.genModeHint.textContent = MODE_HINTS[c.mode] || MODE_HINTS.say;
 }
 
@@ -352,7 +465,7 @@ function applyGenFilter() {
 }
 
 // Reusable SVG for GitHub icon
-const GITHUB_SVG_ICON = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>`;
+const GITHUB_SVG_ICON = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>`;
 
 function renderGenResults() {
   elements.genStatsCount.textContent = genState.filteredResults.length;
@@ -379,84 +492,141 @@ function renderGenResults() {
   for (const item of genState.filteredResults) {
     const card = document.createElement('div');
     card.className = 'name-card card-enter';
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
     const favorited = isFavorite(item.text);
 
     card.innerHTML = `
-      <div class="card-top">
-        <span class="card-text" title="${item.text}">${item.text}</span>
-      </div>
-      <div class="card-bottom">
-        <div class="card-actions">
-          <button class="btn-card-icon btn-card-copy" title="Copy to clipboard">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-            </svg>
-          </button>
-          <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="Save to favorites">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-            </svg>
-          </button>
-        </div>
-        <div class="card-checker">
-          <a class="btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X">X</a>
-          <a class="btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
-          <button class="btn-check-link btn-card-tweak" title="Morph variations in Tweaker">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 3px;">
-              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-            Tweak
-          </button>
-        </div>
+      <span class="card-text" title="${item.text}">${item.text}</span>
+      <div class="card-actions">
+        <button class="btn-card-icon btn-card-copy" title="Copy to clipboard" aria-label="Copy to clipboard">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+          </svg>
+        </button>
+        <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="${favorited ? 'Remove from favorites' : 'Save to favorites'}" aria-label="Save to favorites">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="${favorited ? '#fbbf24' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </button>
+        <button class="btn-card-icon btn-card-tweak" title="Morph in Tweaker" aria-label="Morph in Tweaker">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+        <a class="btn-card-icon btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X" aria-label="Check on X">X</a>
+        <a class="btn-card-icon btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
       </div>
     `;
 
-    // Copy action
     const btnCopy = card.querySelector('.btn-card-copy');
-    btnCopy.addEventListener('click', () => {
+
+    function copyName() {
       navigator.clipboard.writeText(item.text).then(() => {
-        btnCopy.classList.add('copied');
-        btnCopy.innerHTML = `
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        `;
-        showToast(`Copied "${item.text}" to clipboard`);
-        setTimeout(() => {
-          btnCopy.classList.remove('copied');
+        card.classList.add('card-copied');
+        if (btnCopy) {
+          btnCopy.classList.add('copied');
           btnCopy.innerHTML = `
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
             </svg>
           `;
-        }, 1500);
+        }
+        showToast(`Copied "${item.text}" to clipboard`);
+        setTimeout(() => {
+          card.classList.remove('card-copied');
+          if (btnCopy) {
+            btnCopy.classList.remove('copied');
+            btnCopy.innerHTML = `
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+              </svg>
+            `;
+          }
+        }, 1200);
       });
+    }
+
+    // Card click: pins action buttons so they stay visible even when not hovering, and copies name
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.card-actions')) return;
+      document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
+        if (c !== card) c.classList.remove('actions-pinned');
+      });
+      card.classList.add('actions-pinned');
+      copyName();
     });
+
+    // Double-click copies immediately
+    card.addEventListener('dblclick', (e) => {
+      if (e.target.closest('.card-actions')) return;
+      copyName();
+    });
+
+    // Keyboard support: Enter to pin actions & copy (Space is reserved for generating names)
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        if (!e.target.closest('.card-actions')) {
+          e.preventDefault();
+          document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
+            if (c !== card) c.classList.remove('actions-pinned');
+          });
+          card.classList.add('actions-pinned');
+          copyName();
+        }
+      }
+    });
+
+    // Copy button
+    if (btnCopy) {
+      btnCopy.addEventListener('click', (e) => {
+        e.stopPropagation();
+        copyName();
+        btnCopy.blur();
+      });
+    }
 
     // Favorite action
     const btnFav = card.querySelector('.btn-card-fav');
-    btnFav.addEventListener('click', () => {
+    btnFav.addEventListener('click', (e) => {
+      e.stopPropagation();
       if (isFavorite(item.text)) {
         removeFavorite(item.text);
         btnFav.classList.remove('active-favorite');
-        btnFav.querySelector('svg').setAttribute('fill', 'none');
+        btnFav.title = 'Save to favorites';
+        const svg = btnFav.querySelector('svg');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
         showToast(`Removed "${item.text}" from saved`);
       } else {
-        saveFavorite({ text: item.text, rule: item.tags[0] || item.rule, tags: item.tags });
+        saveFavorite({ text: item.text, rule: (item.tags && item.tags[0]) || item.rule || 'Generated', tags: item.tags });
         btnFav.classList.add('active-favorite');
-        btnFav.querySelector('svg').setAttribute('fill', '#fbbf24');
+        btnFav.title = 'Remove from favorites';
+        const svg = btnFav.querySelector('svg');
+        svg.setAttribute('fill', '#fbbf24');
+        svg.setAttribute('stroke', '#fbbf24');
         showToast(`Saved "${item.text}" to favorites`);
       }
       updateFavoritesUI();
+      btnFav.blur();
     });
 
-    // Tweak action (Synergy: Switch to Tweaker with this word!)
+    // Tweak action
     const btnTweak = card.querySelector('.btn-card-tweak');
-    btnTweak.addEventListener('click', () => {
+    btnTweak.addEventListener('click', (e) => {
+      e.stopPropagation();
       tweakGeneratedName(item.text);
+      btnTweak.blur();
+    });
+
+
+
+    // Social links propagation guard
+    card.querySelectorAll('.btn-check-link').forEach(link => {
+      link.addEventListener('click', (e) => e.stopPropagation());
     });
 
     fragment.appendChild(card);
@@ -689,81 +859,140 @@ function renderResults() {
   for (const item of tweakerState.filteredResults) {
     const card = document.createElement('div');
     card.className = 'name-card card-enter';
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
     const favorited = isFavorite(item.text);
 
-    let tagClass = 'tag-pill';
-    const firstTag = (item.tags && item.tags[0]) || item.rule || '';
-    if (firstTag.includes('Leet')) tagClass += ' tag-leet';
-    else if (firstTag.includes('Letter') || firstTag.includes('Phonetic') || firstTag.includes('Typo')) tagClass += ' tag-letter';
-    else if (firstTag.includes('Prefix')) tagClass += ' tag-prefix';
-    else if (firstTag.includes('Suffix')) tagClass += ' tag-suffix';
-    else if (firstTag.includes('Vowel')) tagClass += ' tag-vowel';
-
     card.innerHTML = `
-      <div class="card-top">
-        <span class="card-text" title="${item.text}">${item.text}</span>
-      </div>
-      <div class="card-bottom">
-        <div class="card-bottom-left">
-          <div class="card-actions">
-            <button class="btn-card-icon btn-card-copy" title="Copy to clipboard">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-              </svg>
-            </button>
-            <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="Save to favorites">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
-            </button>
-          </div>
-          <span class="${tagClass}">${item.tags && item.tags[1] ? item.tags[1] : item.rule}</span>
-        </div>
-        <div class="card-checker">
-          <span class="card-length">${item.text.length} chars</span>
-          <a class="btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X">X</a>
-          <a class="btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
-        </div>
+      <span class="card-text" title="${item.text}${item.rule ? ' (' + item.rule + ')' : ''}">${item.text}</span>
+      <div class="card-actions">
+        <button class="btn-card-icon btn-card-copy" title="Copy to clipboard" aria-label="Copy to clipboard">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+          </svg>
+        </button>
+        <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="${favorited ? 'Remove from favorites' : 'Save to favorites'}" aria-label="Save to favorites">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="${favorited ? '#fbbf24' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </button>
+        <button class="btn-card-icon btn-card-tweak" title="Morph in Tweaker" aria-label="Morph in Tweaker">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+        <a class="btn-card-icon btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X" aria-label="Check on X">X</a>
+        <a class="btn-card-icon btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
       </div>
     `;
 
     const btnCopy = card.querySelector('.btn-card-copy');
-    btnCopy.addEventListener('click', () => {
+
+    function copyName() {
       navigator.clipboard.writeText(item.text).then(() => {
-        btnCopy.classList.add('copied');
-        btnCopy.innerHTML = `
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        `;
-        showToast(`Copied "${item.text}" to clipboard`);
-        setTimeout(() => {
-          btnCopy.classList.remove('copied');
+        card.classList.add('card-copied');
+        if (btnCopy) {
+          btnCopy.classList.add('copied');
           btnCopy.innerHTML = `
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
             </svg>
           `;
-        }, 1500);
+        }
+        showToast(`Copied "${item.text}" to clipboard`);
+        setTimeout(() => {
+          card.classList.remove('card-copied');
+          if (btnCopy) {
+            btnCopy.classList.remove('copied');
+            btnCopy.innerHTML = `
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+              </svg>
+            `;
+          }
+        }, 1200);
       });
+    }
+
+    // Card click: pins action buttons so they stay visible even when not hovering, and copies name
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.card-actions')) return;
+      document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
+        if (c !== card) c.classList.remove('actions-pinned');
+      });
+      card.classList.add('actions-pinned');
+      copyName();
     });
 
+    // Double-click copies immediately
+    card.addEventListener('dblclick', (e) => {
+      if (e.target.closest('.card-actions')) return;
+      copyName();
+    });
+
+    // Keyboard support: Enter / Space to pin actions & copy
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (!e.target.closest('.card-actions')) {
+          e.preventDefault();
+          document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
+            if (c !== card) c.classList.remove('actions-pinned');
+          });
+          card.classList.add('actions-pinned');
+          copyName();
+        }
+      }
+    });
+
+    // Copy button
+    if (btnCopy) {
+      btnCopy.addEventListener('click', (e) => {
+        e.stopPropagation();
+        copyName();
+      });
+    }
+
+    // Favorite action
     const btnFav = card.querySelector('.btn-card-fav');
-    btnFav.addEventListener('click', () => {
+    btnFav.addEventListener('click', (e) => {
+      e.stopPropagation();
       if (isFavorite(item.text)) {
         removeFavorite(item.text);
         btnFav.classList.remove('active-favorite');
-        btnFav.querySelector('svg').setAttribute('fill', 'none');
+        btnFav.title = 'Save to favorites';
+        const svg = btnFav.querySelector('svg');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
         showToast(`Removed "${item.text}" from saved`);
       } else {
-        saveFavorite({ text: item.text, rule: item.rule, tags: item.tags });
+        saveFavorite({ text: item.text, rule: item.rule || 'Variation', tags: item.tags });
         btnFav.classList.add('active-favorite');
-        btnFav.querySelector('svg').setAttribute('fill', '#fbbf24');
+        btnFav.title = 'Remove from favorites';
+        const svg = btnFav.querySelector('svg');
+        svg.setAttribute('fill', '#fbbf24');
+        svg.setAttribute('stroke', '#fbbf24');
         showToast(`Saved "${item.text}" to favorites`);
       }
       updateFavoritesUI();
+    });
+
+    // Tweak action (morph this variation)
+    const btnTweak = card.querySelector('.btn-card-tweak');
+    btnTweak.addEventListener('click', (e) => {
+      e.stopPropagation();
+      elements.inputWord.value = item.text;
+      generate({ isUserAction: true });
+      showToast(`Loaded "${item.text}" into Tweaker!`);
+    });
+
+
+
+    // Social links propagation guard
+    card.querySelectorAll('.btn-check-link').forEach(link => {
+      link.addEventListener('click', (e) => e.stopPropagation());
     });
 
     fragment.appendChild(card);
@@ -844,10 +1073,66 @@ function updateFavoritesUI() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Event Listeners Wiring
-// ─────────────────────────────────────────────────────────────────────────────
+// Reusable temporary feedback for tool copy buttons (e.g. Copy All)
+function triggerCopyFeedback(btn) {
+  if (!btn || btn.dataset.copying) return;
+  btn.dataset.copying = 'true';
+  const originalHTML = btn.innerHTML;
+  btn.classList.add('copied');
+  btn.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+    <span>Copied!</span>
+  `;
+  setTimeout(() => {
+    btn.classList.remove('copied');
+    btn.innerHTML = originalHTML;
+    delete btn.dataset.copying;
+  }, 1200);
+}
 
 function setupEventListeners() {
+  // Dismiss pinned card action buttons on click outside or Escape
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.name-card')) {
+      document.querySelectorAll('.name-card.actions-pinned').forEach(c => c.classList.remove('actions-pinned'));
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.name-card.actions-pinned').forEach(c => c.classList.remove('actions-pinned'));
+      return;
+    }
+
+    // Hotkey: Space to Generate Names (in Generator view)
+    if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar') {
+      if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+      if (currentSubcategory !== 'generator') return;
+      if (elements.favoritesDrawer && elements.favoritesDrawer.classList.contains('open')) return;
+
+      const active = document.activeElement;
+      if (active) {
+        const tag = active.tagName.toLowerCase();
+        if (tag === 'textarea' || active.isContentEditable) return;
+        if (tag === 'select') return;
+        if (tag === 'input') {
+          const type = (active.type || 'text').toLowerCase();
+          if (type !== 'button' && type !== 'submit' && type !== 'reset') {
+            return;
+          }
+        }
+        if (tag === 'button' && active !== elements.genBtnGenerate && active !== elements.genBtnLoadMore) {
+          return;
+        }
+      }
+
+      e.preventDefault();
+      generateNames(true);
+    }
+  });
+
   // Subcategory Navigation Tabs
   elements.subcatNavBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -890,6 +1175,7 @@ function setupEventListeners() {
     input.addEventListener('change', () => {
       readGenConfigFromUI();
       generateNames(true);
+      input.blur();
     });
   });
 
@@ -898,7 +1184,7 @@ function setupEventListeners() {
     let minVal = parseInt(elements.genLenMin.value, 10);
     const maxVal = parseInt(elements.genLenMax.value, 10) || 10;
     if (isNaN(minVal) || minVal < 3) minVal = 3;
-    if (minVal > 32) minVal = 32;
+    if (minVal > 25) minVal = 25;
     // Check min isn't bigger than max; then it defaults to the same number as max
     if (minVal > maxVal) {
       minVal = maxVal;
@@ -911,7 +1197,7 @@ function setupEventListeners() {
   function commitMaxLength() {
     let maxVal = parseInt(elements.genLenMax.value, 10);
     const minVal = parseInt(elements.genLenMin.value, 10) || 3;
-    if (isNaN(maxVal) || maxVal > 32) maxVal = 32;
+    if (isNaN(maxVal) || maxVal > 25) maxVal = 25;
     if (maxVal < 3) maxVal = 3;
     // Vice versa: check max isn't smaller than min; then it defaults to the same number as min
     if (maxVal < minVal) {
@@ -939,7 +1225,7 @@ function setupEventListeners() {
   elements.genLenMax.addEventListener('input', () => {
     const maxVal = parseInt(elements.genLenMax.value, 10);
     const minVal = parseInt(elements.genLenMin.value, 10);
-    if (!isNaN(maxVal) && maxVal <= 32 && maxVal >= minVal) {
+    if (!isNaN(maxVal) && maxVal <= 25 && maxVal >= minVal) {
       genState.config.maxLength = maxVal;
       generateNames();
     }
@@ -960,6 +1246,7 @@ function setupEventListeners() {
         elements.genBatchCustom.classList.remove('active');
       }
       genState.config.count = parseInt(pill.dataset.count, 10);
+      pill.blur();
       generateNames(true);
     });
   });
@@ -975,7 +1262,7 @@ function setupEventListeners() {
           elements.genBatchCustom.classList.remove('active');
           return;
         }
-        val = 12;
+        val = 16;
       }
       if (val > 999) val = 999;
       elements.genBatchCustom.value = val;
@@ -1031,10 +1318,8 @@ function setupEventListeners() {
   // Generator Checkboxes & Selects
   const genInputsToWatch = [
     elements.genOptLowercase, elements.genOptUppercase, elements.genOptNumbers, elements.genOptSymbols,
-    elements.genNumberPlacement, elements.genDigitCount,
-    elements.genAdvPrefix, elements.genAdvSuffix, elements.genAdvKeyword, elements.genAdvKeywordPos,
-    elements.genAdvSeparator, elements.genAdvExclude, elements.genAdvStartLetter,
-    elements.genAdvAvoidRepeats, elements.genAdvLeetspeak
+    elements.genAdvPrefix, elements.genAdvSuffix, elements.genAdvKeyword, elements.genAdvExclude,
+    elements.genAdvStartLetter, elements.genAdvAvoidRepeats, elements.genAdvLeetspeak
   ];
 
   genInputsToWatch.forEach(input => {
@@ -1042,9 +1327,48 @@ function setupEventListeners() {
       input.addEventListener('change', () => {
         readGenConfigFromUI();
         generateNames();
+        if (input.type === 'checkbox') {
+          input.blur();
+        }
       });
+      if (input.tagName === 'INPUT' && input.type === 'text') {
+        input.addEventListener('input', () => {
+          readGenConfigFromUI();
+          generateNames();
+        });
+      }
     }
   });
+
+  // Custom Symbols Input & Quick Presets
+  if (elements.genCustomSymbolsInput) {
+    elements.genCustomSymbolsInput.addEventListener('input', () => {
+      genState.config.customSymbols = elements.genCustomSymbolsInput.value;
+      syncSymbolChipsState();
+      generateNames();
+    });
+  }
+
+  if (elements.btnSymbolsDefault) {
+    elements.btnSymbolsDefault.addEventListener('click', () => {
+      setCustomSymbolsValue(ALL_SYMBOLS);
+      elements.btnSymbolsDefault.blur();
+    });
+  }
+
+  if (elements.btnSymbolsMinimal) {
+    elements.btnSymbolsMinimal.addEventListener('click', () => {
+      setCustomSymbolsValue(MINIMAL_SYMBOLS);
+      elements.btnSymbolsMinimal.blur();
+    });
+  }
+
+  if (elements.btnSymbolsClear) {
+    elements.btnSymbolsClear.addEventListener('click', () => {
+      setCustomSymbolsValue('');
+      elements.btnSymbolsClear.blur();
+    });
+  }
 
   // Primary Generator Triggers
   elements.genBtnGenerate.addEventListener('click', () => generateNames(true));
@@ -1070,6 +1394,7 @@ function setupEventListeners() {
     genState.config.uppercase = pickedCase.uppercase;
     genState.config.numbers = Math.random() > 0.6;
     syncGenUIFromConfig();
+    elements.genBtnSurprise.blur();
     generateNames(true);
   });
 
@@ -1077,6 +1402,7 @@ function setupEventListeners() {
   elements.genBtnReset.addEventListener('click', () => {
     genState.config = { ...DEFAULT_GENERATOR_CONFIG };
     syncGenUIFromConfig();
+    elements.genBtnReset.blur();
     generateNames(true);
   });
 
@@ -1092,6 +1418,7 @@ function setupEventListeners() {
     if (genState.filteredResults.length === 0) return;
     const allText = genState.filteredResults.map(r => r.text).join('\n');
     navigator.clipboard.writeText(allText).then(() => {
+      triggerCopyFeedback(elements.genBtnCopyAll);
       showToast(`Copied ${genState.filteredResults.length} names to clipboard!`);
     });
   });
@@ -1170,6 +1497,7 @@ function setupEventListeners() {
     if (tweakerState.filteredResults.length === 0) return;
     const allText = tweakerState.filteredResults.map(r => r.text).join('\n');
     navigator.clipboard.writeText(allText).then(() => {
+      triggerCopyFeedback(elements.btnCopyAll);
       showToast(`Copied ${tweakerState.filteredResults.length} names to clipboard!`);
     });
   });
@@ -1241,6 +1569,7 @@ function setupEventListeners() {
     if (favorites.length === 0) return;
     const allText = favorites.map(f => f.text).join('\n');
     navigator.clipboard.writeText(allText).then(() => {
+      triggerCopyFeedback(elements.btnCopyFavorites);
       showToast(`Copied ${favorites.length} saved names!`);
     });
   });
@@ -1266,6 +1595,7 @@ function setupEventListeners() {
 
 // App Initialization
 function init() {
+  renderSymbolChips();
   syncGenUIFromConfig();
   renderPresetChips();
   syncUIFromConfig();
