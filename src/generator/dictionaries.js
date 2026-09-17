@@ -83,7 +83,9 @@ export const TEMPLATE_SHAPE = {
 export const LOWER = 'abcdefghijklmnopqrstuvwxyz';
 export const UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 export const DIGITS = '0123456789';
-export const SYMBOLS = '-_.';
+export const SYMBOLS = '!@#$%^&*()_+-=[]{}|;:,.<>?/~';
+export const DEFAULT_SYMBOLS = SYMBOLS;
+export const MINIMAL_SYMBOLS = '-_.';
 export const AMBIGUOUS = '0Oo1lIi';
 export const READABLE_VOWELS = 'aeu';
 export const READABLE_CONSONANTS = 'bcdfghjkmnprstvwxyz'; // no l/i/o, no q

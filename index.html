@@ -181,8 +181,26 @@
             </label>
             <label class="checkbox-label" id="gen-opt-symbols-wrap">
               <input type="checkbox" id="gen-opt-symbols">
-              <span>Symbols (- _ .)</span>
+              <span>Symbols</span>
             </label>
+          </div>
+        </div>
+
+        <!-- Customize Symbols Section (visible only when Symbols is enabled) -->
+        <div class="gen-section" id="gen-symbols-custom-section" style="display: none;">
+          <div class="gen-section-header">
+            <label class="gen-section-label" for="gen-custom-symbols-input">Customize Symbols</label>
+            <div class="gen-symbols-actions">
+              <button type="button" id="btn-symbols-default" class="gen-symbols-action-btn" title="Reset to standard symbols">All</button>
+              <button type="button" id="btn-symbols-minimal" class="gen-symbols-action-btn" title="Only web-safe (- _ .)">Minimal</button>
+              <button type="button" id="btn-symbols-clear" class="gen-symbols-action-btn" title="Clear all symbols">Clear</button>
+            </div>
+          </div>
+          <div class="gen-symbols-input-wrap">
+            <input type="text" id="gen-custom-symbols-input" class="gen-symbols-input" placeholder="Type, paste, or toggle symbols..." spellcheck="false" autocomplete="off" value="!@#$%^&*()_+-=[]{}|;:,.<>?/~">
+          </div>
+          <div class="gen-symbols-chips-grid" id="gen-symbols-chips" aria-label="Toggle individual symbols">
+            <!-- Dynamically populated symbol chips -->
           </div>
         </div>
 

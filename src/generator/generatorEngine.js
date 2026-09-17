@@ -415,16 +415,17 @@ function generateReadableWord(targetLen, excludeChars) {
 
 function generateRandomWord(targetLen, options) {
   let alpha = '';
+  const symbolPool = (typeof options.customSymbols === 'string') ? options.customSymbols : SYMBOLS;
   if (options.lowercase) alpha += LOWER;
   if (options.uppercase) alpha += UPPER;
   if (options.numbers) alpha += DIGITS;
-  if (options.symbols) alpha += SYMBOLS;
+  if (options.symbols) alpha += symbolPool;
   if (!alpha) alpha = LOWER;
 
   const alphabet = subtract(uniqueChars(alpha), options.excludeChars);
   if (!alphabet.length) return null;
 
-  const letters = subtract(alphabet, DIGITS + SYMBOLS);
+  const letters = subtract(alphabet, DIGITS + symbolPool);
   const poolForFirst = (options.startWithLetter && letters.length > 0) ? letters : alphabet;
 
   for (let attempt = 0; attempt < 80; attempt++) {
@@ -636,6 +637,7 @@ export const DEFAULT_GENERATOR_CONFIG = {
   uppercase: false,
   numbers: false,
   symbols: false,
+  customSymbols: SYMBOLS,
   prefix: '',
   suffix: '',
   keyword: '',
@@ -665,6 +667,7 @@ export function normalizeGeneratorOptions(rawOpts = {}) {
   o.suffix = String(o.suffix || '').trim();
   o.keyword = String(o.keyword || '').trim();
   o.excludeChars = String(o.excludeChars || '').trim();
+  o.customSymbols = typeof o.customSymbols === 'string' ? o.customSymbols : SYMBOLS;
   return o;
 }
 
@@ -755,6 +758,7 @@ export function generateWordBatch(rawOptions = {}) {
 
     const tags = [modeLabel];
     if (o.numbers && o.mode !== 'say' && o.mode !== 'read') tags.push('Numbers');
+    if (o.symbols && o.mode === 'random') tags.push('Symbols');
     if (o.leetspeak) tags.push('Leet');
     if (o.prefix || o.suffix || o.keyword) tags.push('Affixed');
 

@@ -13,6 +13,7 @@ import { generateVariations } from './transforms/engine.js';
 import { PRESETS } from './transforms/presets.js';
 import { getFavorites, saveFavorite, removeFavorite, isFavorite, clearAllFavorites } from './storage.js';
 import { generateWordBatch, DEFAULT_GENERATOR_CONFIG } from './generator/generatorEngine.js';
+import { DEFAULT_SYMBOLS, MINIMAL_SYMBOLS } from './generator/dictionaries.js';
 
 // Random starter word bank for Tweaker
 const SAMPLE_WORDS = [
@@ -78,6 +79,12 @@ const elements = {
   genOptNumbersWrap: document.getElementById('gen-opt-numbers-wrap'),
   genOptSymbols: document.getElementById('gen-opt-symbols'),
   genOptSymbolsWrap: document.getElementById('gen-opt-symbols-wrap'),
+  genSymbolsCustomSection: document.getElementById('gen-symbols-custom-section'),
+  genCustomSymbolsInput: document.getElementById('gen-custom-symbols-input'),
+  genSymbolsChips: document.getElementById('gen-symbols-chips'),
+  btnSymbolsDefault: document.getElementById('btn-symbols-default'),
+  btnSymbolsMinimal: document.getElementById('btn-symbols-minimal'),
+  btnSymbolsClear: document.getElementById('btn-symbols-clear'),
   genAdvPrefix: document.getElementById('gen-adv-prefix'),
   genAdvSuffix: document.getElementById('gen-adv-suffix'),
   genAdvKeyword: document.getElementById('gen-adv-keyword'),
@@ -201,10 +208,10 @@ function switchSubcategory(tabId) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MODE_HINTS = {
-  say: 'Natural, pronounceable names built from phonetic English syllables (e.g., velora, talmir).',
-  read: 'Characters constrained to avoid confusing lookalikes like 0/O and 1/l/I. Easy to read and type.',
-  memorable: 'Memorable compound handles formed by combining evocative adjectives and nouns (e.g., swift-falcon, amber_ridge).',
-  random: 'True pseudorandom combinations from enabled character sets (lowercase, uppercase, numbers, symbols).'
+  say: 'Natural, pronounceable names built from phonetic English syllables (e.g. velora, talmir).',
+  read: 'Characters constrained to avoid confusing lookalikes like 0/O and 1/l/I.',
+  memorable: 'Compound handles formed by combining adjectives and nouns (e.g. swiftfox, ambergal).',
+  random: 'Any pseudorandom combinations from enabled character sets.'
 };
 
 function updateModeCompatibilityUI(mode) {
@@ -238,6 +245,71 @@ function updateModeCompatibilityUI(mode) {
   } else if (elements.genOptSymbols) {
     elements.genOptSymbols.disabled = false;
   }
+
+  updateCustomizeSymbolsVisibility();
+}
+
+function updateCustomizeSymbolsVisibility() {
+  const isSymbolsCompatible = genState.config.mode === 'random';
+  const isSymbolsActive = isSymbolsCompatible &&
+                          elements.genOptSymbols &&
+                          !elements.genOptSymbols.disabled &&
+                          elements.genOptSymbols.checked;
+
+  if (elements.genSymbolsCustomSection) {
+    elements.genSymbolsCustomSection.style.display = isSymbolsActive ? 'flex' : 'none';
+  }
+}
+
+function renderSymbolChips() {
+  if (!elements.genSymbolsChips) return;
+  elements.genSymbolsChips.innerHTML = '';
+
+  const activeSymbols = new Set(String(genState.config.customSymbols || ''));
+
+  for (const sym of DEFAULT_SYMBOLS) {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'gen-symbol-chip' + (activeSymbols.has(sym) ? ' active' : '');
+    chip.dataset.symbol = sym;
+    chip.textContent = sym;
+    chip.title = `Toggle ${sym}`;
+
+    chip.addEventListener('click', () => {
+      toggleCustomSymbol(sym);
+    });
+
+    elements.genSymbolsChips.appendChild(chip);
+  }
+}
+
+function syncSymbolChipsState() {
+  if (!elements.genSymbolsChips) return;
+  const activeSymbols = new Set(String(genState.config.customSymbols || ''));
+  const chips = elements.genSymbolsChips.querySelectorAll('.gen-symbol-chip');
+  chips.forEach(chip => {
+    const sym = chip.dataset.symbol;
+    chip.classList.toggle('active', activeSymbols.has(sym));
+  });
+}
+
+function toggleCustomSymbol(sym) {
+  let current = String(elements.genCustomSymbolsInput ? elements.genCustomSymbolsInput.value : genState.config.customSymbols || '');
+  if (current.includes(sym)) {
+    current = current.replaceAll(sym, '');
+  } else {
+    current += sym;
+  }
+  setCustomSymbolsValue(current);
+}
+
+function setCustomSymbolsValue(newSymbols) {
+  genState.config.customSymbols = newSymbols;
+  if (elements.genCustomSymbolsInput) {
+    elements.genCustomSymbolsInput.value = newSymbols;
+  }
+  syncSymbolChipsState();
+  generateNames();
 }
 
 function readGenConfigFromUI() {
@@ -264,6 +336,10 @@ function readGenConfigFromUI() {
   genState.config.symbols = elements.genOptSymbols && !elements.genOptSymbols.disabled
     ? elements.genOptSymbols.checked
     : false;
+  if (elements.genCustomSymbolsInput) {
+    genState.config.customSymbols = elements.genCustomSymbolsInput.value;
+  }
+  updateCustomizeSymbolsVisibility();
 
   genState.config.prefix = elements.genAdvPrefix.value;
   genState.config.suffix = elements.genAdvSuffix.value;
@@ -304,6 +380,11 @@ function syncGenUIFromConfig() {
   elements.genOptUppercase.checked = !!c.uppercase;
   elements.genOptNumbers.checked = !!c.numbers;
   elements.genOptSymbols.checked = !!c.symbols;
+  if (elements.genCustomSymbolsInput) {
+    elements.genCustomSymbolsInput.value = c.customSymbols !== undefined ? c.customSymbols : DEFAULT_SYMBOLS;
+  }
+  syncSymbolChipsState();
+  updateCustomizeSymbolsVisibility();
 
   elements.genAdvPrefix.value = c.prefix || '';
   elements.genAdvSuffix.value = c.suffix || '';
@@ -1254,6 +1335,36 @@ function setupEventListeners() {
     }
   });
 
+  // Custom Symbols Input & Quick Presets
+  if (elements.genCustomSymbolsInput) {
+    elements.genCustomSymbolsInput.addEventListener('input', () => {
+      genState.config.customSymbols = elements.genCustomSymbolsInput.value;
+      syncSymbolChipsState();
+      generateNames();
+    });
+  }
+
+  if (elements.btnSymbolsDefault) {
+    elements.btnSymbolsDefault.addEventListener('click', () => {
+      setCustomSymbolsValue(DEFAULT_SYMBOLS);
+      elements.btnSymbolsDefault.blur();
+    });
+  }
+
+  if (elements.btnSymbolsMinimal) {
+    elements.btnSymbolsMinimal.addEventListener('click', () => {
+      setCustomSymbolsValue(MINIMAL_SYMBOLS);
+      elements.btnSymbolsMinimal.blur();
+    });
+  }
+
+  if (elements.btnSymbolsClear) {
+    elements.btnSymbolsClear.addEventListener('click', () => {
+      setCustomSymbolsValue('');
+      elements.btnSymbolsClear.blur();
+    });
+  }
+
   // Primary Generator Triggers
   elements.genBtnGenerate.addEventListener('click', () => generateNames(true));
   elements.genBtnLoadMore.addEventListener('click', () => generateNames(true));
@@ -1479,6 +1590,7 @@ function setupEventListeners() {
 
 // App Initialization
 function init() {
+  renderSymbolChips();
   syncGenUIFromConfig();
   renderPresetChips();
   syncUIFromConfig();
