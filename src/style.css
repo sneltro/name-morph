@@ -1648,14 +1648,17 @@ input:checked + .slider:before {
 
 .gen-btn-main {
   width: 100%;
-  padding: 0.8rem;
+  height: 48px;
+  padding: 0 0.85rem;
   font-size: 0.92rem;
+  border: none;
 }
 
 .gen-btn-surprise {
   width: 100%;
-  padding: 0.65rem;
-  font-size: 0.85rem;
+  height: 48px;
+  padding: 0 0.85rem;
+  font-size: 0.92rem;
 }
 
 

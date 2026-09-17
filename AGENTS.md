@@ -84,6 +84,11 @@ NameMorph is a client-side username and brand name variation generator (Vanilla 
 - **Pure Transforms**: Keep `src/transforms/` pure, decoupled from the DOM, returning `{ text, rule, tags }`.
 - **Deduplication**: Enforce root-word exclusion and unique variation results in `engine.js`.
 
+### Browser & Environment Invariants
+- **NEVER use browser subagent or browser tools** to open tabs/windows in the user's Google Chrome or local environment.
+- Local dev server runs on `http://localhost:5182` with `open: false`.
+- Never attempt to launch or automate external browsers. Use terminal commands or unit tests for validation.
+
 
 ---
 
