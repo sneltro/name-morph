@@ -99,40 +99,24 @@ export const CONSONANT_FOLLOWERS = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Curated Words for "Memorable" Mode
+// Words for "Memorable" (Word Pairs) Mode
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const ADJECTIVES = [
-  'amber', 'ample', 'arctic', 'ashen', 'aurora', 'azure', 'balmy', 'blithe', 'bold',
-  'brave', 'brisk', 'bronze', 'calm', 'candid', 'civil', 'clever', 'cobalt', 'copper',
-  'coral', 'cosmic', 'crimson', 'crisp', 'daring', 'dawn', 'deft', 'dusky', 'eager',
-  'early', 'easy', 'elder', 'ember', 'fabled', 'fair', 'fleet', 'fluent', 'frosted',
-  'gentle', 'gilded', 'glad', 'golden', 'grand', 'hardy', 'hazel', 'humble', 'ivory',
-  'jade', 'jolly', 'keen', 'kindly', 'lively', 'lucid', 'lunar', 'marble', 'mellow',
-  'merry', 'mild', 'misty', 'noble', 'nimble', 'olive', 'opal', 'polar', 'prime',
-  'quiet', 'rapid', 'rustic', 'sable', 'sandy', 'scarlet', 'sharp', 'silent', 'silver',
-  'sleek', 'slate', 'solar', 'spry', 'stellar', 'stormy', 'sunny', 'swift', 'tidal',
-  'timber', 'topaz', 'tranquil', 'trusty', 'umber', 'urban', 'valiant', 'velvet',
-  'verdant', 'vivid', 'warm', 'whisper', 'wild', 'wily', 'winter', 'wise', 'zesty',
-  'neon', 'cyber', 'hyper', 'crypto', 'shadow', 'iron', 'steel', 'mystic', 'vortex',
-  'astro', 'sonic', 'turbo', 'quantum', 'prime', 'alpha', 'omega', 'blaze', 'flux'
-];
+import { ADJECTIVES } from './adjectives.js';
+import { NOUNS } from './nouns.js';
 
-export const NOUNS = [
-  'acorn', 'anchor', 'arbor', 'arrow', 'aspen', 'atlas', 'badger', 'basin', 'beacon',
-  'birch', 'bison', 'bramble', 'breeze', 'brook', 'canyon', 'cedar', 'cinder', 'cliff',
-  'clover', 'comet', 'cypress', 'cove', 'crane', 'crest', 'delta', 'dune', 'eagle',
-  'echo', 'ember', 'fable', 'falcon', 'fathom', 'fern', 'fjord', 'flint', 'forge',
-  'fox', 'gale', 'garnet', 'glade', 'granite', 'grove', 'harbor', 'harvest', 'haven',
-  'heron', 'hollow', 'ibis', 'inlet', 'juniper', 'kestrel', 'lantern', 'lark', 'ledger',
-  'lichen', 'lotus', 'lynx', 'maple', 'meadow', 'meridian', 'mesa', 'nectar', 'nimbus',
-  'onyx', 'orchard', 'osprey', 'otter', 'pebble', 'pine', 'pilot', 'quarry', 'quill',
-  'raven', 'reef', 'ridge', 'river', 'rowan', 'sable', 'sage', 'sequoia', 'shore',
-  'sparrow', 'spruce', 'summit', 'thicket', 'thistle', 'tide', 'timber', 'trail',
-  'tundra', 'valley', 'vessel', 'vista', 'walnut', 'warden', 'willow', 'wren', 'zenith',
-  'nexus', 'pixel', 'cipher', 'vector', 'matrix', 'stride', 'surge', 'pulse', 'spark',
-  'drift', 'blade', 'titan', 'ghost', 'shield', 'relic', 'shard', 'orbit', 'signal'
-];
+export { ADJECTIVES, NOUNS };
+
+// Pre-bucket adjectives by character length for instant target matching
+export const ADJECTIVES_BY_LENGTH = (() => {
+  const map = {};
+  for (const a of ADJECTIVES) {
+    const len = a.length;
+    if (!map[len]) map[len] = [];
+    map[len].push(a);
+  }
+  return map;
+})();
 
 // Pre-bucket nouns by character length for instant target matching
 export const NOUNS_BY_LENGTH = (() => {
