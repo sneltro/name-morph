@@ -1225,44 +1225,8 @@ input:checked + .slider:before {
 /* ==========================================================================
    Generator Subcategory Styles
    ========================================================================== */
-.gen-hero {
-  max-width: 1520px;
-  margin: 1.25rem auto 1.5rem;
-  padding: 0 1.5rem;
-}
-
-.gen-hero-content {
-  background: linear-gradient(135deg, rgba(22, 28, 46, 0.7) 0%, rgba(16, 21, 34, 0.85) 100%);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: 1.25rem 1.75rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.gen-hero-content::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--accent-gradient);
-}
-
-.gen-hero-content h2 {
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  margin-bottom: 0.25rem;
-  letter-spacing: -0.01em;
-}
-
-.gen-lead {
-  font-size: 0.88rem;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  margin: 0;
+#view-generator .main-container {
+  margin-top: 1.5rem;
 }
 
 .gen-controls-panel {
@@ -1290,7 +1254,7 @@ input:checked + .slider:before {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-auto-rows: 1fr;
-  gap: 0.45rem;
+  gap: 0.35rem;
 }
 
 .gen-mode-chip {
@@ -1311,12 +1275,12 @@ input:checked + .slider:before {
   background: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 0.6rem 0.7rem;
+  padding: 0.4rem 0.6rem;
   transition: all var(--transition-fast);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.15rem;
+  gap: 0.1rem;
   flex: 1;
   height: 100%;
   box-sizing: border-box;
@@ -1334,14 +1298,19 @@ input:checked + .slider:before {
 }
 
 .gen-mode-title {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
+  line-height: 1.2;
   color: var(--text-primary);
 }
 
 .gen-mode-desc {
-  font-size: 0.68rem;
+  font-size: 0.67rem;
   color: var(--text-muted);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .gen-hint-text {
