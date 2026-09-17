@@ -77,8 +77,8 @@ body {
   top: 0;
   z-index: 50;
   background: var(--bg-glass);
-  backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border-subtle);
   padding: 0.85rem 1.5rem;
 }
@@ -118,6 +118,7 @@ body {
   letter-spacing: -0.02em;
   background: var(--accent-gradient);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   display: flex;
   align-items: center;
@@ -611,6 +612,7 @@ input:checked + .slider:before {
   font-size: 0.8rem;
   color: var(--text-secondary);
   cursor: pointer;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -767,8 +769,8 @@ input:checked + .slider:before {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  user-select: all;
   -webkit-user-select: all;
+  user-select: all;
   cursor: pointer;
   min-width: 0;
   flex: 1;
@@ -973,6 +975,7 @@ input:checked + .slider:before {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   z-index: 99;
   display: none;
@@ -1395,6 +1398,7 @@ input:checked + .slider:before {
   font-size: 0.9rem;
   font-weight: 500;
   padding: 0 3px;
+  -webkit-user-select: none;
   user-select: none;
   line-height: 1;
 }
@@ -1541,6 +1545,7 @@ input:checked + .slider:before {
   cursor: pointer;
   transition: all var(--transition-fast);
   padding: 0;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -1581,6 +1586,7 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: space-between;
   list-style: none;
+  -webkit-user-select: none;
   user-select: none;
   transition: color var(--transition-fast), background var(--transition-fast);
 }
@@ -1718,6 +1724,7 @@ input:checked + .slider:before {
   letter-spacing: -0.02em;
   background: linear-gradient(135deg, #f1f5f9 0%, #cbd5e1 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   max-width: 700px;
   line-height: 1.2;
