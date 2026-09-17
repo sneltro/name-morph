@@ -20,7 +20,7 @@ import {
   LOWER, UPPER, DIGITS, SYMBOLS, AMBIGUOUS,
   READABLE_VOWELS, READABLE_CONSONANTS, READABLE_DIGITS,
   CONSONANT_FOLLOWERS,
-  ADJECTIVES, NOUNS, NOUNS_BY_LENGTH,
+  ADJECTIVES, NOUNS, NOUNS_BY_LENGTH, ADJECTIVES_BY_LENGTH,
   BLOCKED_TERMS, LEET_UNMAP
 } from './dictionaries.js';
 
@@ -469,33 +469,35 @@ function generateRandomWord(targetLen, options) {
 // Mode 4: Memorable (Adjective + Noun)
 // ─────────────────────────────────────────────────────────────────────────────
 
+function getMemorablePartitions(neededWordLen) {
+  const partitions = [];
+  for (let adjLen = 3; adjLen <= 17; adjLen++) {
+    const nounLen = neededWordLen - adjLen;
+    if (nounLen >= 3 && nounLen <= 17) {
+      if (ADJECTIVES_BY_LENGTH[adjLen] && ADJECTIVES_BY_LENGTH[adjLen].length > 0 &&
+          NOUNS_BY_LENGTH[nounLen] && NOUNS_BY_LENGTH[nounLen].length > 0) {
+        partitions.push([adjLen, nounLen]);
+      }
+    }
+  }
+  return partitions;
+}
+
 function generateMemorableWord(targetLen, options) {
   const sep = options.separator || '';
   const neededWordLen = targetLen - sep.length;
 
-  for (let attempt = 0; attempt < 100; attempt++) {
-    let adj = '';
-    let noun = '';
+  const partitions = getMemorablePartitions(neededWordLen);
+  if (partitions.length === 0) {
+    return null;
+  }
 
-    if (attempt < 50 && neededWordLen >= 7) {
-      // Attempt exact length match
-      const shuffledAdj = shuffled(ADJECTIVES);
-      for (const a of shuffledAdj) {
-        const remaining = neededWordLen - a.length;
-        if (NOUNS_BY_LENGTH[remaining] && NOUNS_BY_LENGTH[remaining].length > 0) {
-          adj = a;
-          noun = secureRandomChoice(NOUNS_BY_LENGTH[remaining]);
-          break;
-        }
-      }
-    }
+  for (let attempt = 0; attempt < 80; attempt++) {
+    const [adjLen, nounLen] = secureRandomChoice(partitions);
+    const adj = secureRandomChoice(ADJECTIVES_BY_LENGTH[adjLen]);
+    const noun = secureRandomChoice(NOUNS_BY_LENGTH[nounLen]);
 
-    if (!adj || !noun) {
-      adj = secureRandomChoice(ADJECTIVES);
-      noun = secureRandomChoice(NOUNS);
-      const total = adj.length + noun.length;
-      if (Math.abs(total - neededWordLen) > 3 && attempt < 80) continue;
-    }
+    if (!adj || !noun) continue;
 
     let word = adj + sep + noun;
     if (options.excludeChars) {
@@ -681,6 +683,19 @@ export function generateWordBatch(rawOptions = {}) {
 
   // Core length available for the root generated word
   let affixLen = o.prefix.length + o.suffix.length + o.keyword.length;
+  const sepLen = (o.separator || '').length;
+  const minMemorableCore = 6 + sepLen;
+
+  if (o.mode === 'memorable') {
+    const maxAvailableCore = o.maxLength - affixLen;
+    if (maxAvailableCore < minMemorableCore) {
+      return {
+        items: [],
+        totalAvailable: 0,
+        error: 'No words matched these criteria. Try relaxing length or exclusions.'
+      };
+    }
+  }
 
   const maxAttempts = Math.max(o.count * 60 + 200, 1000);
   let attempts = 0;
@@ -690,10 +705,23 @@ export function generateWordBatch(rawOptions = {}) {
     attempts++;
     let rawCore = '';
 
-    const targetLength = o.minLength === o.maxLength
-      ? o.minLength
-      : o.minLength + secureRandomInt(o.maxLength - o.minLength + 1);
-    let coreTargetLen = Math.max(3, targetLength - affixLen);
+    let targetLength;
+    if (o.mode === 'memorable') {
+      const effMin = Math.max(o.minLength, minMemorableCore + affixLen);
+      if (effMin > o.maxLength) break;
+      targetLength = effMin === o.maxLength
+        ? effMin
+        : effMin + secureRandomInt(o.maxLength - effMin + 1);
+    } else {
+      targetLength = o.minLength === o.maxLength
+        ? o.minLength
+        : o.minLength + secureRandomInt(o.maxLength - o.minLength + 1);
+    }
+
+    let coreTargetLen = targetLength - affixLen;
+    if (o.mode !== 'memorable') {
+      coreTargetLen = Math.max(3, coreTargetLen);
+    }
 
     if (o.mode === 'say') {
       rawCore = generatePronounceableWord(coreTargetLen, o.excludeChars);
@@ -737,6 +765,11 @@ export function generateWordBatch(rawOptions = {}) {
     // - If only uppercase: all words are uppercase
     // - If both: each character can be either lowercase or uppercase (decided randomly)
     finished = applyCasingByOptions(finished, o);
+
+    // Strict length range validation: must satisfy [minLength, maxLength]
+    if (finished.length < o.minLength || finished.length > o.maxLength) {
+      continue;
+    }
 
     // Deduplication check & safety check
     const normalizedKey = finished.toLowerCase();
