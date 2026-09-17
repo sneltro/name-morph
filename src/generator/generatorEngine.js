@@ -447,7 +447,17 @@ function generateRandomWord(targetLen, options) {
     }
 
     if (!ok) continue;
-    const word = chars.join('');
+    let word = chars.join('');
+    if (options.numbers && !/[0-9]/.test(word)) {
+      const digitPool = subtract(DIGITS, options.excludeChars);
+      if (digitPool.length > 0) {
+        const replaceIdx = (options.startWithLetter && chars.length > 1)
+          ? 1 + secureRandomInt(chars.length - 1)
+          : secureRandomInt(chars.length);
+        chars[replaceIdx] = digitPool.charAt(secureRandomInt(digitPool.length));
+        word = chars.join('');
+      }
+    }
     if (containsBlockedTerm(word)) continue;
     return word;
   }
@@ -563,22 +573,54 @@ function applyLightLeet(word) {
   return chars.join('');
 }
 
-function generateDigits(count) {
-  let s = '';
-  for (let i = 0; i < count; i++) {
-    s += DIGITS.charAt(secureRandomInt(DIGITS.length));
-  }
-  return s;
-}
+export function applyNumbersByChance(word, options = {}) {
+  if (!word || !options.numbers) return word;
 
-function insertDigits(word, digits, placement) {
-  if (!digits) return word;
-  if (placement === 'start') return digits + word;
-  if (placement === 'anywhere' && word.length > 2) {
-    const at = 1 + secureRandomInt(word.length - 1);
-    return word.slice(0, at) + digits + word.slice(at);
+  const chars = word.split('');
+  const isReadMode = options.mode === 'read';
+  const digitPool = isReadMode
+    ? subtract(READABLE_DIGITS, options.excludeChars)
+    : subtract(DIGITS, options.excludeChars);
+
+  if (!digitPool.length) return word;
+
+  const hasLetters = !!options.lowercase || !!options.uppercase;
+
+  // If only numbers is enabled (no letters), all characters become digits
+  if (!hasLetters) {
+    for (let i = 0; i < chars.length; i++) {
+      chars[i] = digitPool.charAt(secureRandomInt(digitPool.length));
+    }
+    return chars.join('');
   }
-  return word + digits; // default 'end'
+
+  // Determine eligible character positions (e.g. letters)
+  const startIndex = (options.startWithLetter && chars.length > 1) ? 1 : 0;
+  const eligibleIndices = [];
+  for (let i = startIndex; i < chars.length; i++) {
+    if (/[a-zA-Z0-9]/.test(chars[i])) {
+      eligibleIndices.push(i);
+    }
+  }
+
+  if (!eligibleIndices.length) return word;
+
+  let digitCount = 0;
+  // Each character has an independent ~25% chance to be a number
+  for (const idx of eligibleIndices) {
+    if (secureRandomInt(100) < 25) {
+      chars[idx] = digitPool.charAt(secureRandomInt(digitPool.length));
+      digitCount++;
+    }
+  }
+
+  // Guarantee at least one digit is present if numbers is enabled
+  if (digitCount === 0) {
+    const pickedIdx = eligibleIndices[secureRandomInt(eligibleIndices.length)];
+    chars[pickedIdx] = digitPool.charAt(secureRandomInt(digitPool.length));
+  }
+
+  return chars.join('');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -594,8 +636,6 @@ export const DEFAULT_GENERATOR_CONFIG = {
   uppercase: false,
   numbers: false,
   symbols: false,
-  digitCount: 2,
-  numberPlacement: 'end',    // 'end' | 'start' | 'anywhere'
   prefix: '',
   suffix: '',
   keyword: '',
@@ -621,7 +661,6 @@ export function normalizeGeneratorOptions(rawOpts = {}) {
   o.minLength = minLen;
   o.maxLength = maxLen;
   o.count = Math.max(1, Math.min(999, Number(o.count) || 12));
-  o.digitCount = Math.max(1, Math.min(4, Number(o.digitCount) || 2));
   o.prefix = String(o.prefix || '').trim();
   o.suffix = String(o.suffix || '').trim();
   o.keyword = String(o.keyword || '').trim();
@@ -642,7 +681,6 @@ export function generateWordBatch(rawOptions = {}) {
   // Core length available for the root generated word
   let affixLen = o.prefix.length + o.suffix.length + o.keyword.length;
   if (o.keyword && o.separator) affixLen += o.separator.length;
-  const digitsLen = o.numbers ? o.digitCount : 0;
 
   const maxAttempts = Math.max(o.count * 60 + 200, 1000);
   let attempts = 0;
@@ -655,7 +693,7 @@ export function generateWordBatch(rawOptions = {}) {
     const targetLength = o.minLength === o.maxLength
       ? o.minLength
       : o.minLength + secureRandomInt(o.maxLength - o.minLength + 1);
-    let coreTargetLen = Math.max(3, targetLength - affixLen - digitsLen);
+    let coreTargetLen = Math.max(3, targetLength - affixLen);
 
     if (o.mode === 'say') {
       rawCore = generatePronounceableWord(coreTargetLen, o.excludeChars);
@@ -674,10 +712,9 @@ export function generateWordBatch(rawOptions = {}) {
 
     let finished = rawCore;
 
-    // Insert digits if requested
-    if (o.numbers) {
-      const digits = generateDigits(o.digitCount);
-      finished = insertDigits(finished, digits, o.numberPlacement);
+    // If numbers enabled in non-random modes, each character has a chance to be a number (disabled for say & read)
+    if (o.numbers && o.mode !== 'random' && o.mode !== 'say' && o.mode !== 'read') {
+      finished = applyNumbersByChance(finished, o);
     }
 
     // Keyword attachment
@@ -717,7 +754,7 @@ export function generateWordBatch(rawOptions = {}) {
     else if (o.mode === 'memorable') modeLabel = 'Memorable Words';
 
     const tags = [modeLabel];
-    if (o.numbers) tags.push(`${o.digitCount} Digits`);
+    if (o.numbers && o.mode !== 'say' && o.mode !== 'read') tags.push('Numbers');
     if (o.leetspeak) tags.push('Leet');
     if (o.prefix || o.suffix || o.keyword) tags.push('Affixed');
 

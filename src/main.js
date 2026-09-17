@@ -75,10 +75,9 @@ const elements = {
   genOptLowercase: document.getElementById('gen-opt-lowercase'),
   genOptUppercase: document.getElementById('gen-opt-uppercase'),
   genOptNumbers: document.getElementById('gen-opt-numbers'),
+  genOptNumbersWrap: document.getElementById('gen-opt-numbers-wrap'),
   genOptSymbols: document.getElementById('gen-opt-symbols'),
-  genNumberSettings: document.getElementById('gen-number-settings'),
-  genNumberPlacement: document.getElementById('gen-number-placement'),
-  genDigitCount: document.getElementById('gen-digit-count'),
+  genOptSymbolsWrap: document.getElementById('gen-opt-symbols-wrap'),
   genAdvPrefix: document.getElementById('gen-adv-prefix'),
   genAdvSuffix: document.getElementById('gen-adv-suffix'),
   genAdvKeyword: document.getElementById('gen-adv-keyword'),
@@ -208,11 +207,45 @@ const MODE_HINTS = {
   random: 'True pseudorandom combinations from enabled character sets (lowercase, uppercase, numbers, symbols).'
 };
 
+function updateModeCompatibilityUI(mode) {
+  // Numbers are disabled for "say" and "read"
+  const isNumbersCompatible = mode !== 'say' && mode !== 'read';
+  // Symbols are only compatible with "random" mode
+  const isSymbolsCompatible = mode === 'random';
+
+  if (elements.genOptNumbersWrap) {
+    elements.genOptNumbersWrap.style.display = isNumbersCompatible ? 'flex' : 'none';
+  }
+  if (!isNumbersCompatible) {
+    if (elements.genOptNumbers) {
+      elements.genOptNumbers.checked = false;
+      elements.genOptNumbers.disabled = true;
+    }
+    genState.config.numbers = false;
+  } else if (elements.genOptNumbers) {
+    elements.genOptNumbers.disabled = false;
+  }
+
+  if (elements.genOptSymbolsWrap) {
+    elements.genOptSymbolsWrap.style.display = isSymbolsCompatible ? 'flex' : 'none';
+  }
+  if (!isSymbolsCompatible) {
+    if (elements.genOptSymbols) {
+      elements.genOptSymbols.checked = false;
+      elements.genOptSymbols.disabled = true;
+    }
+    genState.config.symbols = false;
+  } else if (elements.genOptSymbols) {
+    elements.genOptSymbols.disabled = false;
+  }
+}
+
 function readGenConfigFromUI() {
   const selectedMode = document.querySelector('input[name="gen-mode"]:checked');
   if (selectedMode) {
     genState.config.mode = selectedMode.value;
   }
+  updateModeCompatibilityUI(genState.config.mode);
 
   let minVal = parseInt(elements.genLenMin.value, 10);
   let maxVal = parseInt(elements.genLenMax.value, 10);
@@ -225,10 +258,12 @@ function readGenConfigFromUI() {
   genState.config.maxLength = maxVal;
   genState.config.lowercase = elements.genOptLowercase.checked;
   genState.config.uppercase = elements.genOptUppercase.checked;
-  genState.config.numbers = elements.genOptNumbers.checked;
-  genState.config.symbols = elements.genOptSymbols.checked;
-  genState.config.numberPlacement = elements.genNumberPlacement.value;
-  genState.config.digitCount = parseInt(elements.genDigitCount.value, 10) || 2;
+  genState.config.numbers = elements.genOptNumbers && !elements.genOptNumbers.disabled
+    ? elements.genOptNumbers.checked
+    : false;
+  genState.config.symbols = elements.genOptSymbols && !elements.genOptSymbols.disabled
+    ? elements.genOptSymbols.checked
+    : false;
 
   genState.config.prefix = elements.genAdvPrefix.value;
   genState.config.suffix = elements.genAdvSuffix.value;
@@ -253,7 +288,6 @@ function readGenConfigFromUI() {
     }
   }
 
-  elements.genNumberSettings.style.display = genState.config.numbers ? 'flex' : 'none';
   elements.genModeHint.textContent = MODE_HINTS[genState.config.mode] || MODE_HINTS.say;
 }
 
@@ -262,6 +296,7 @@ function syncGenUIFromConfig() {
   elements.genModeInputs.forEach(input => {
     input.checked = input.value === c.mode;
   });
+  updateModeCompatibilityUI(c.mode);
 
   elements.genLenMin.value = c.minLength || 6;
   elements.genLenMax.value = c.maxLength || 10;
@@ -269,8 +304,6 @@ function syncGenUIFromConfig() {
   elements.genOptUppercase.checked = !!c.uppercase;
   elements.genOptNumbers.checked = !!c.numbers;
   elements.genOptSymbols.checked = !!c.symbols;
-  elements.genNumberPlacement.value = c.numberPlacement || 'end';
-  elements.genDigitCount.value = String(c.digitCount || 2);
 
   elements.genAdvPrefix.value = c.prefix || '';
   elements.genAdvSuffix.value = c.suffix || '';
@@ -297,7 +330,6 @@ function syncGenUIFromConfig() {
     }
   }
 
-  elements.genNumberSettings.style.display = c.numbers ? 'flex' : 'none';
   elements.genModeHint.textContent = MODE_HINTS[c.mode] || MODE_HINTS.say;
 }
 
@@ -453,9 +485,9 @@ function renderGenResults() {
       copyName();
     });
 
-    // Keyboard support: Enter / Space to pin actions & copy
+    // Keyboard support: Enter to pin actions & copy (Space is reserved for generating names)
     card.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
+      if (e.key === 'Enter') {
         if (!e.target.closest('.card-actions')) {
           e.preventDefault();
           document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
@@ -472,6 +504,7 @@ function renderGenResults() {
       btnCopy.addEventListener('click', (e) => {
         e.stopPropagation();
         copyName();
+        btnCopy.blur();
       });
     }
 
@@ -497,6 +530,7 @@ function renderGenResults() {
         showToast(`Saved "${item.text}" to favorites`);
       }
       updateFavoritesUI();
+      btnFav.blur();
     });
 
     // Tweak action
@@ -504,6 +538,7 @@ function renderGenResults() {
     btnTweak.addEventListener('click', (e) => {
       e.stopPropagation();
       tweakGeneratedName(item.text);
+      btnTweak.blur();
     });
 
 
@@ -987,6 +1022,33 @@ function setupEventListeners() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       document.querySelectorAll('.name-card.actions-pinned').forEach(c => c.classList.remove('actions-pinned'));
+      return;
+    }
+
+    // Hotkey: Space to Generate Names (in Generator view)
+    if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar') {
+      if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+      if (currentSubcategory !== 'generator') return;
+      if (elements.favoritesDrawer && elements.favoritesDrawer.classList.contains('open')) return;
+
+      const active = document.activeElement;
+      if (active) {
+        const tag = active.tagName.toLowerCase();
+        if (tag === 'textarea' || active.isContentEditable) return;
+        if (tag === 'select') return;
+        if (tag === 'input') {
+          const type = (active.type || 'text').toLowerCase();
+          if (type !== 'button' && type !== 'submit' && type !== 'reset') {
+            return;
+          }
+        }
+        if (tag === 'button' && active !== elements.genBtnGenerate && active !== elements.genBtnLoadMore) {
+          return;
+        }
+      }
+
+      e.preventDefault();
+      generateNames(true);
     }
   });
 
@@ -1032,6 +1094,7 @@ function setupEventListeners() {
     input.addEventListener('change', () => {
       readGenConfigFromUI();
       generateNames(true);
+      input.blur();
     });
   });
 
@@ -1102,6 +1165,7 @@ function setupEventListeners() {
         elements.genBatchCustom.classList.remove('active');
       }
       genState.config.count = parseInt(pill.dataset.count, 10);
+      pill.blur();
       generateNames(true);
     });
   });
@@ -1173,7 +1237,6 @@ function setupEventListeners() {
   // Generator Checkboxes & Selects
   const genInputsToWatch = [
     elements.genOptLowercase, elements.genOptUppercase, elements.genOptNumbers, elements.genOptSymbols,
-    elements.genNumberPlacement, elements.genDigitCount,
     elements.genAdvPrefix, elements.genAdvSuffix, elements.genAdvKeyword, elements.genAdvKeywordPos,
     elements.genAdvSeparator, elements.genAdvExclude, elements.genAdvStartLetter,
     elements.genAdvAvoidRepeats, elements.genAdvLeetspeak
@@ -1184,6 +1247,9 @@ function setupEventListeners() {
       input.addEventListener('change', () => {
         readGenConfigFromUI();
         generateNames();
+        if (input.type === 'checkbox') {
+          input.blur();
+        }
       });
     }
   });
@@ -1212,6 +1278,7 @@ function setupEventListeners() {
     genState.config.uppercase = pickedCase.uppercase;
     genState.config.numbers = Math.random() > 0.6;
     syncGenUIFromConfig();
+    elements.genBtnSurprise.blur();
     generateNames(true);
   });
 
@@ -1219,6 +1286,7 @@ function setupEventListeners() {
   elements.genBtnReset.addEventListener('click', () => {
     genState.config = { ...DEFAULT_GENERATOR_CONFIG };
     syncGenUIFromConfig();
+    elements.genBtnReset.blur();
     generateNames(true);
   });
 
