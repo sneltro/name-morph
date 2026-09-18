@@ -331,6 +331,14 @@ body {
   border-radius: var(--radius-sm);
   outline: none;
   transition: var(--transition-fast);
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.qty-custom-input::-webkit-outer-spin-button,
+.qty-custom-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .qty-custom-input:focus {
