@@ -20,7 +20,7 @@ import {
   LOWER, UPPER, DIGITS, SYMBOLS, AMBIGUOUS,
   READABLE_VOWELS, READABLE_CONSONANTS, READABLE_DIGITS,
   CONSONANT_FOLLOWERS,
-  ADJECTIVES, NOUNS, NOUNS_BY_LENGTH, ADJECTIVES_BY_LENGTH,
+  NOUNS_BY_LENGTH, ADJECTIVES_BY_LENGTH,
   BLOCKED_TERMS, LEET_UNMAP
 } from './dictionaries.js';
 
@@ -39,10 +39,7 @@ function getCrypto() {
 
 export function secureRandomInt(maxExclusive) {
   if (maxExclusive <= 1) return 0;
-  const cryptoObj = getCrypto();
-  if (!cryptoObj) {
-    return Math.floor(Math.random() * maxExclusive);
-  }
+  const cryptoObj = getCrypto() || globalThis.crypto;
   const limit = Math.floor(DRAW_SPACE / maxExclusive) * maxExclusive;
   const buf = new Uint32Array(1);
   let v;
@@ -61,14 +58,14 @@ export function secureRandomChoice(list) {
 export function weightedChoice(pairs) {
   if (!pairs || pairs.length === 0) return null;
   let total = 0;
-  for (let i = 0; i < pairs.length; i++) {
-    total += pairs[i][1];
+  for (const pair of pairs) {
+    total += pair[1];
   }
   const target = (secureRandomInt(DRAW_SPACE) / DRAW_SPACE) * total;
   let acc = 0;
-  for (let i = 0; i < pairs.length; i++) {
-    acc += pairs[i][1];
-    if (target < acc) return pairs[i][0];
+  for (const pair of pairs) {
+    acc += pair[1];
+    if (target < acc) return pair[0];
   }
   return pairs[pairs.length - 1][0];
 }
@@ -120,7 +117,7 @@ function normalizeForSafety(str) {
     if (/[a-z0-9]/.test(ch)) out += ch;
   }
   // Collapse duplicate runs (e.g. fuuuck -> fuck)
-  return out.replace(/([a-z0-9])\1{1,}/g, '$1');
+  return out.replace(/([a-z0-9])\1+/g, '$1');
 }
 
 export function containsBlockedTerm(candidate) {
@@ -128,10 +125,17 @@ export function containsBlockedTerm(candidate) {
   const raw = String(candidate).toLowerCase();
   const normalized = normalizeForSafety(candidate);
 
-  for (let i = 0; i < BLOCKED_TERMS.length; i++) {
-    const term = BLOCKED_TERMS[i];
+  for (const term of BLOCKED_TERMS) {
     if (raw.includes(term)) return true;
     if (term.length >= 4 && normalized.includes(term)) return true;
+  }
+  return false;
+}
+
+function containsExcludedChar(word, excludeChars) {
+  if (!excludeChars) return false;
+  for (let i = 0; i < word.length; i++) {
+    if (excludeChars.includes(word.charAt(i))) return true;
   }
   return false;
 }
@@ -158,14 +162,10 @@ function pickSized(pairs, wantLen) {
   return weightedChoice(best);
 }
 
-function buildSyllable(position, targetLen, isFinal, allowDiphthong) {
-  const templates = SYLLABLE_TEMPLATES[position] || SYLLABLE_TEMPLATES.medial;
-  let nucLen = allowDiphthong ? weightedChoice([[1, 8], [2, 2]]) : 1;
-  let chosen = null;
-  let budget = 0;
-
-  for (let pass = 0; pass < 2 && !chosen; pass++) {
-    budget = targetLen - nucLen;
+function selectSyllableTemplate(templates, targetLen, initialNucLen) {
+  let nucLen = initialNucLen;
+  for (let pass = 0; pass < 2; pass++) {
+    const budget = targetLen - nucLen;
     const eligible = [];
     for (const tpl of templates) {
       const name = tpl[0];
@@ -176,17 +176,22 @@ function buildSyllable(position, targetLen, isFinal, allowDiphthong) {
       if (budget >= minC && budget <= maxC) eligible.push(tpl);
     }
     if (eligible.length > 0) {
-      chosen = weightedChoice(eligible);
-      break;
+      return { template: weightedChoice(eligible), nucLen, budget };
     }
     nucLen = nucLen === 1 ? 2 : 1;
   }
 
-  if (!chosen) {
-    nucLen = 1;
-    budget = Math.max(1, targetLen - 1);
-    chosen = weightedChoice(templates);
-  }
+  return {
+    template: weightedChoice(templates),
+    nucLen: 1,
+    budget: Math.max(1, targetLen - 1)
+  };
+}
+
+function buildSyllable(position, targetLen, isFinal, allowDiphthong) {
+  const templates = SYLLABLE_TEMPLATES[position] || SYLLABLE_TEMPLATES.medial;
+  const initialNucLen = allowDiphthong ? weightedChoice([[1, 8], [2, 2]]) : 1;
+  const { template: chosen, nucLen, budget } = selectSyllableTemplate(templates, targetLen, initialNucLen);
 
   const shape = TEMPLATE_SHAPE[chosen];
   const onsetMin = Math.max(shape.onset[0], budget - shape.coda[1]);
@@ -199,7 +204,8 @@ function buildSyllable(position, targetLen, isFinal, allowDiphthong) {
   else if (onsetLen >= 2) onset = pickSized(ONSET_CLUSTERS, onsetLen);
 
   const nucleus = pickSized(NUCLEI, nucLen);
-  const coda = codaLen >= 1 ? pickSized(isFinal ? FINAL_CODAS : CODAS, codaLen) : '';
+  const codaBank = isFinal ? FINAL_CODAS : CODAS;
+  const coda = codaLen >= 1 ? pickSized(codaBank, codaLen) : '';
 
   return {
     text: onset + nucleus + coda,
@@ -273,52 +279,47 @@ function lengthBudget(total, n) {
   return out;
 }
 
+function getSyllablePosition(index, count) {
+  if (index === 0) return 'initial';
+  if (index === count - 1) return 'final';
+  return 'medial';
+}
+
+function tryAssembleSyllables(syllablesCount, budget) {
+  const parts = [];
+  let prev = null;
+  let diphthongsLeft = 1;
+
+  for (let i = 0; i < syllablesCount; i++) {
+    const isFinal = i === syllablesCount - 1;
+    const pos = getSyllablePosition(i, syllablesCount);
+    let syl = null;
+
+    for (let sAttempt = 0; sAttempt < 20; sAttempt++) {
+      const cand = buildSyllable(pos, budget[i], isFinal, diphthongsLeft > 0);
+      if (!prev || junctionOk(prev, cand)) {
+        syl = cand;
+        break;
+      }
+    }
+
+    if (!syl) return null;
+    if (syl.diphthong) diphthongsLeft--;
+    parts.push(syl);
+    prev = syl;
+  }
+  return parts.map(p => p.text).join('');
+}
+
 function generatePronounceableWord(targetLen, excludeChars) {
   const syllablesCount = targetLen <= 3 ? 1 : Math.max(2, Math.min(Math.floor(targetLen / 2), Math.round(targetLen / 2.8)));
   const budget = syllablesCount === 1 ? [targetLen] : lengthBudget(targetLen, syllablesCount);
 
   for (let attempt = 0; attempt < 80; attempt++) {
-    const parts = [];
-    let prev = null;
-    let ok = true;
-    let diphthongsLeft = 1;
-
-    for (let i = 0; i < syllablesCount; i++) {
-      const pos = i === 0 ? 'initial' : (i === syllablesCount - 1 ? 'final' : 'medial');
-      const isFinal = i === syllablesCount - 1;
-      let syl = null;
-
-      for (let sAttempt = 0; sAttempt < 20; sAttempt++) {
-        const cand = buildSyllable(pos, budget[i], isFinal, diphthongsLeft > 0);
-        if (!prev || junctionOk(prev, cand)) {
-          syl = cand;
-          break;
-        }
-      }
-
-      if (!syl) {
-        ok = false;
-        break;
-      }
-      if (syl.diphthong) diphthongsLeft--;
-      parts.push(syl);
-      prev = syl;
-    }
-
-    if (!ok) continue;
-    const word = parts.map(p => p.text).join('');
-    if (word.length !== targetLen) continue;
+    const word = tryAssembleSyllables(syllablesCount, budget);
+    if (!word || word.length !== targetLen) continue;
     if (!passesPhonotactics(word)) continue;
-    if (excludeChars) {
-      let hasExcluded = false;
-      for (let i = 0; i < word.length; i++) {
-        if (excludeChars.includes(word.charAt(i))) {
-          hasExcluded = true;
-          break;
-        }
-      }
-      if (hasExcluded) continue;
-    }
+    if (containsExcludedChar(word, excludeChars)) continue;
     if (containsBlockedTerm(word)) continue;
     return word;
   }
@@ -329,6 +330,85 @@ function generatePronounceableWord(targetLen, excludeChars) {
 // Mode 2: Easy to Read (Unambiguous, Typo-Free)
 // ─────────────────────────────────────────────────────────────────────────────
 
+function getReadableVowelProbability(length, lastClass) {
+  if (length === 0) return 30;
+  return lastClass === 'v' ? 20 : 60;
+}
+
+function determineReadableCharClass(state, targetLen) {
+  if (state.consRun >= 2) return 'v';
+  if (state.vowelRun >= 2) return 'c';
+  const pv = getReadableVowelProbability(state.out.length, state.lastClass);
+  const cls = secureRandomInt(100) < pv ? 'v' : 'c';
+  if (state.out.length === targetLen - 1 && cls === 'c' && state.consRun >= 1) {
+    return 'v';
+  }
+  return cls;
+}
+
+function getReadableCharPool(initialClass, state, config) {
+  let cls = initialClass;
+  let pool = cls === 'v' ? config.vowels : config.consonants;
+
+  if (cls === 'c' && state.lastClass === 'c') {
+    if (state.out.length < 2) {
+      cls = 'v';
+      pool = config.vowels;
+    } else {
+      const allowed = CONSONANT_FOLLOWERS[state.lastChar] || '';
+      pool = subtract(allowed, config.exclude);
+      if (!pool.length) {
+        cls = 'v';
+        pool = config.vowels;
+      }
+    }
+  }
+
+  if (state.lastChar) pool = subtract(pool, state.lastChar);
+  if (!pool.length) {
+    cls = 'v';
+    pool = subtract(config.vowels, state.lastChar);
+  }
+  return { pool, cls };
+}
+
+function pickNextReadableChar(state, config) {
+  const initialClass = determineReadableCharClass(state, config.targetLen);
+  const { pool, cls } = getReadableCharPool(initialClass, state, config);
+  if (!pool.length) return null;
+
+  const ch = pool.charAt(secureRandomInt(pool.length));
+  return { ch, cls };
+}
+
+function buildReadableAttempt(targetLen, vowels, consonants, exclude) {
+  const state = {
+    out: '',
+    vowelRun: 0,
+    consRun: 0,
+    lastClass: '',
+    lastChar: ''
+  };
+  const config = { targetLen, vowels, consonants, exclude };
+
+  while (state.out.length < targetLen) {
+    const next = pickNextReadableChar(state, config);
+    if (!next) return null;
+
+    if (next.cls === 'v') {
+      state.vowelRun++;
+      state.consRun = 0;
+    } else {
+      state.consRun++;
+      state.vowelRun = 0;
+    }
+    state.lastClass = next.cls;
+    state.lastChar = next.ch;
+    state.out += next.ch;
+  }
+  return state.out;
+}
+
 function generateReadableWord(targetLen, excludeChars) {
   const exclude = (excludeChars || '') + AMBIGUOUS;
   const vowels = subtract(READABLE_VOWELS, exclude);
@@ -336,74 +416,8 @@ function generateReadableWord(targetLen, excludeChars) {
   if (!vowels.length || !consonants.length) return null;
 
   for (let attempt = 0; attempt < 80; attempt++) {
-    let out = '';
-    let vowelRun = 0;
-    let consRun = 0;
-    let lastClass = '';
-    let lastChar = '';
-    let stuck = false;
-
-    while (out.length < targetLen) {
-      let pool = '';
-      let cls = '';
-
-      if (consRun >= 2) {
-        cls = 'v';
-        pool = vowels;
-      } else if (vowelRun >= 2) {
-        cls = 'c';
-        pool = consonants;
-      } else {
-        const pv = out.length === 0 ? 30 : (lastClass === 'v' ? 20 : 60);
-        cls = secureRandomInt(100) < pv ? 'v' : 'c';
-        pool = cls === 'v' ? vowels : consonants;
-      }
-
-      if (out.length === targetLen - 1 && cls === 'c' && consRun >= 1) {
-        cls = 'v';
-        pool = vowels;
-      }
-
-      if (cls === 'c' && lastClass === 'c') {
-        if (out.length < 2) {
-          cls = 'v';
-          pool = vowels;
-        } else {
-          const allowed = CONSONANT_FOLLOWERS[lastChar] || '';
-          pool = subtract(allowed, exclude);
-          if (!pool.length) {
-            cls = 'v';
-            pool = vowels;
-          }
-        }
-      }
-
-      if (lastChar) pool = subtract(pool, lastChar);
-      if (!pool.length) {
-        cls = 'v';
-        pool = subtract(vowels, lastChar);
-      }
-      if (!pool.length) {
-        stuck = true;
-        break;
-      }
-
-      const ch = pool.charAt(secureRandomInt(pool.length));
-      if (cls === 'v') {
-        vowelRun++;
-        consRun = 0;
-      } else {
-        consRun++;
-        vowelRun = 0;
-      }
-      lastClass = cls;
-      lastChar = ch;
-      out += ch;
-    }
-
-    if (stuck) continue;
-    if (/(.)\1\1/.test(out)) continue;
-    if (containsBlockedTerm(out)) continue;
+    const out = buildReadableAttempt(targetLen, vowels, consonants, exclude);
+    if (!out || /(.)\1\1/.test(out) || containsBlockedTerm(out)) continue;
     return out;
   }
   return null;
@@ -413,7 +427,7 @@ function generateReadableWord(targetLen, excludeChars) {
 // Mode 3: Random
 // ─────────────────────────────────────────────────────────────────────────────
 
-function generateRandomWord(targetLen, options) {
+function buildRandomAlphabet(options) {
   let alpha = '';
   const symbolPool = (typeof options.customSymbols === 'string') ? options.customSymbols : SYMBOLS;
   if (options.lowercase) alpha += LOWER;
@@ -427,38 +441,50 @@ function generateRandomWord(targetLen, options) {
 
   const letters = subtract(alphabet, DIGITS + symbolPool);
   const poolForFirst = (options.startWithLetter && letters.length > 0) ? letters : alphabet;
+  return { alphabet, poolForFirst };
+}
+
+function assembleRandomChars(targetLen, alphabet, poolForFirst, avoidRepeats) {
+  const chars = [];
+  const used = new Set();
+
+  for (let i = 0; i < targetLen; i++) {
+    let pool = (i === 0) ? poolForFirst : alphabet;
+    if (avoidRepeats) {
+      pool = subtract(pool, Array.from(used).join(''));
+      if (!pool.length) return null;
+    }
+    const ch = pool.charAt(secureRandomInt(pool.length));
+    used.add(ch);
+    chars.push(ch);
+  }
+  return chars;
+}
+
+function ensureDigitPresent(chars, options) {
+  let word = chars.join('');
+  if (options.numbers && !/\d/.test(word)) {
+    const digitPool = subtract(DIGITS, options.excludeChars);
+    if (digitPool.length > 0) {
+      const replaceIdx = (options.startWithLetter && chars.length > 1)
+        ? 1 + secureRandomInt(chars.length - 1)
+        : secureRandomInt(chars.length);
+      chars[replaceIdx] = digitPool.charAt(secureRandomInt(digitPool.length));
+      word = chars.join('');
+    }
+  }
+  return word;
+}
+
+function generateRandomWord(targetLen, options) {
+  const config = buildRandomAlphabet(options);
+  if (!config) return null;
+  const { alphabet, poolForFirst } = config;
 
   for (let attempt = 0; attempt < 80; attempt++) {
-    const chars = [];
-    const used = new Set();
-    let ok = true;
-
-    for (let i = 0; i < targetLen; i++) {
-      let pool = (i === 0) ? poolForFirst : alphabet;
-      if (options.avoidRepeats) {
-        pool = subtract(pool, Array.from(used).join(''));
-        if (!pool.length) {
-          ok = false;
-          break;
-        }
-      }
-      const ch = pool.charAt(secureRandomInt(pool.length));
-      used.add(ch);
-      chars.push(ch);
-    }
-
-    if (!ok) continue;
-    let word = chars.join('');
-    if (options.numbers && !/[0-9]/.test(word)) {
-      const digitPool = subtract(DIGITS, options.excludeChars);
-      if (digitPool.length > 0) {
-        const replaceIdx = (options.startWithLetter && chars.length > 1)
-          ? 1 + secureRandomInt(chars.length - 1)
-          : secureRandomInt(chars.length);
-        chars[replaceIdx] = digitPool.charAt(secureRandomInt(digitPool.length));
-        word = chars.join('');
-      }
-    }
+    const chars = assembleRandomChars(targetLen, alphabet, poolForFirst, options.avoidRepeats);
+    if (!chars) continue;
+    const word = ensureDigitPresent(chars, options);
     if (containsBlockedTerm(word)) continue;
     return word;
   }
@@ -499,17 +525,8 @@ function generateMemorableWord(targetLen, options) {
 
     if (!adj || !noun) continue;
 
-    let word = adj + sep + noun;
-    if (options.excludeChars) {
-      let hasExcluded = false;
-      for (let i = 0; i < word.length; i++) {
-        if (options.excludeChars.includes(word.charAt(i))) {
-          hasExcluded = true;
-          break;
-        }
-      }
-      if (hasExcluded) continue;
-    }
+    const word = adj + sep + noun;
+    if (containsExcludedChar(word, options.excludeChars)) continue;
     if (containsBlockedTerm(word)) continue;
     return { adj, noun, sep };
   }
@@ -519,6 +536,26 @@ function generateMemorableWord(targetLen, options) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Casing & Decoration Modifiers
 // ─────────────────────────────────────────────────────────────────────────────
+
+function applyRandomMixedCase(word) {
+  const chars = word.split('');
+  const letterIndices = [];
+  for (let i = 0; i < chars.length; i++) {
+    if (/[a-zA-Z]/.test(chars[i])) {
+      letterIndices.push(i);
+      chars[i] = (secureRandomInt(2) === 1) ? chars[i].toUpperCase() : chars[i].toLowerCase();
+    }
+  }
+  if (letterIndices.length >= 2) {
+    const allUpper = letterIndices.every(idx => chars[idx] === chars[idx].toUpperCase());
+    const allLower = letterIndices.every(idx => chars[idx] === chars[idx].toLowerCase());
+    if (allUpper || allLower) {
+      const flipIdx = letterIndices[secureRandomInt(letterIndices.length)];
+      chars[flipIdx] = allUpper ? chars[flipIdx].toLowerCase() : chars[flipIdx].toUpperCase();
+    }
+  }
+  return chars.join('');
+}
 
 export function applyCasingByOptions(word, options = {}) {
   if (!word) return word;
@@ -533,27 +570,7 @@ export function applyCasingByOptions(word, options = {}) {
 
   // If both are enabled, each character can be either lowercase or uppercase (decided randomly)
   if (hasLower && hasUpper) {
-    const chars = word.split('');
-    const letterIndices = [];
-    for (let i = 0; i < chars.length; i++) {
-      if (/[a-zA-Z]/.test(chars[i])) {
-        letterIndices.push(i);
-        chars[i] = (secureRandomInt(2) === 1) ? chars[i].toUpperCase() : chars[i].toLowerCase();
-      }
-    }
-    // Guarantee visible mixed case if the word has 2 or more letters and all rolled the exact same case
-    if (letterIndices.length >= 2) {
-      const allUpper = letterIndices.every(idx => chars[idx] === chars[idx].toUpperCase());
-      const allLower = letterIndices.every(idx => chars[idx] === chars[idx].toLowerCase());
-      if (allUpper) {
-        const flipIdx = letterIndices[secureRandomInt(letterIndices.length)];
-        chars[flipIdx] = chars[flipIdx].toLowerCase();
-      } else if (allLower) {
-        const flipIdx = letterIndices[secureRandomInt(letterIndices.length)];
-        chars[flipIdx] = chars[flipIdx].toUpperCase();
-      }
-    }
-    return chars.join('');
+    return applyRandomMixedCase(word);
   }
 
   // If only lowercase is enabled (or fallback): all words are lowercase
@@ -574,6 +591,23 @@ function applyLightLeet(word) {
     chars[idx] = leetMap[chars[idx].toLowerCase()];
   }
   return chars.join('');
+}
+
+function replaceLettersWithNumbers(chars, eligibleIndices, digitPool) {
+  let digitCount = 0;
+  // Each character has an independent ~25% chance to be a number
+  for (const idx of eligibleIndices) {
+    if (secureRandomInt(100) < 25) {
+      chars[idx] = digitPool.charAt(secureRandomInt(digitPool.length));
+      digitCount++;
+    }
+  }
+
+  // Guarantee at least one digit is present if numbers is enabled
+  if (digitCount === 0) {
+    const pickedIdx = eligibleIndices[secureRandomInt(eligibleIndices.length)];
+    chars[pickedIdx] = digitPool.charAt(secureRandomInt(digitPool.length));
+  }
 }
 
 export function applyNumbersByChance(word, options = {}) {
@@ -608,20 +642,7 @@ export function applyNumbersByChance(word, options = {}) {
 
   if (!eligibleIndices.length) return word;
 
-  let digitCount = 0;
-  // Each character has an independent ~25% chance to be a number
-  for (const idx of eligibleIndices) {
-    if (secureRandomInt(100) < 25) {
-      chars[idx] = digitPool.charAt(secureRandomInt(digitPool.length));
-      digitCount++;
-    }
-  }
-
-  // Guarantee at least one digit is present if numbers is enabled
-  if (digitCount === 0) {
-    const pickedIdx = eligibleIndices[secureRandomInt(eligibleIndices.length)];
-    chars[pickedIdx] = digitPool.charAt(secureRandomInt(digitPool.length));
-  }
+  replaceLettersWithNumbers(chars, eligibleIndices, digitPool);
 
   return chars.join('');
 }
@@ -653,8 +674,8 @@ export function normalizeGeneratorOptions(rawOpts = {}) {
   const o = { ...DEFAULT_GENERATOR_CONFIG, ...rawOpts };
   let minLen = Number(o.minLength ?? o.length ?? 6);
   let maxLen = Number(o.maxLength ?? o.length ?? 10);
-  if (isNaN(minLen)) minLen = 6;
-  if (isNaN(maxLen)) maxLen = 10;
+  if (Number.isNaN(minLen)) minLen = 6;
+  if (Number.isNaN(maxLen)) maxLen = 10;
   minLen = Math.max(3, Math.min(25, minLen));
   maxLen = Math.max(3, Math.min(25, maxLen));
   if (minLen > maxLen) {
@@ -671,6 +692,109 @@ export function normalizeGeneratorOptions(rawOpts = {}) {
   return o;
 }
 
+function pickTargetLength(options, minMemorableCore, affixLen) {
+  if (options.mode === 'memorable') {
+    const effMin = Math.max(options.minLength, minMemorableCore + affixLen);
+    if (effMin > options.maxLength) return null;
+    return effMin === options.maxLength
+      ? effMin
+      : effMin + secureRandomInt(options.maxLength - effMin + 1);
+  }
+  return options.minLength === options.maxLength
+    ? options.minLength
+    : options.minLength + secureRandomInt(options.maxLength - options.minLength + 1);
+}
+
+function generateCoreWord(mode, coreTargetLen, options) {
+  if (mode === 'say') return generatePronounceableWord(coreTargetLen, options.excludeChars);
+  if (mode === 'read') return generateReadableWord(coreTargetLen, options.excludeChars);
+  if (mode === 'random') return generateRandomWord(coreTargetLen, options);
+  if (mode === 'memorable') {
+    const pair = generateMemorableWord(coreTargetLen, options);
+    return pair ? pair.adj + pair.sep + pair.noun : null;
+  }
+  return null;
+}
+
+function finalizeGeneratedWord(rawCore, options) {
+  let finished = rawCore;
+
+  // If numbers enabled in non-random modes, each character has a chance to be a number (disabled for say & read)
+  if (options.numbers && options.mode !== 'random' && options.mode !== 'say' && options.mode !== 'read') {
+    finished = applyNumbersByChance(finished, options);
+  }
+
+  // Keyword insertion at a random position in the generated word
+  if (options.keyword) {
+    const insertIdx = secureRandomInt(finished.length + 1);
+    finished = finished.slice(0, insertIdx) + options.keyword + finished.slice(insertIdx);
+  }
+
+  // Leetspeak
+  if (options.leetspeak) {
+    finished = applyLightLeet(finished);
+  }
+
+  // Prefix & Suffix
+  if (options.prefix) finished = options.prefix + finished;
+  if (options.suffix) finished = finished + options.suffix;
+
+  // Apply casing based on Lowercase & Uppercase switchers:
+  // - If only lowercase: all words are lowercase
+  // - If only uppercase: all words are uppercase
+  // - If both: each character can be either lowercase or uppercase (decided randomly)
+  return applyCasingByOptions(finished, options);
+}
+
+function buildWordMetadata(finished, options) {
+  const modeLabels = {
+    say: 'Easy to Say',
+    read: 'Easy to Read',
+    random: 'Random',
+    memorable: 'Memorable Words'
+  };
+  const modeLabel = modeLabels[options.mode] || 'Easy to Say';
+
+  const tags = [modeLabel];
+  if (options.numbers && options.mode !== 'say' && options.mode !== 'read') tags.push('Numbers');
+  if (options.symbols && options.mode === 'random') tags.push('Symbols');
+  if (options.leetspeak) tags.push('Leet');
+  if (options.prefix || options.suffix || options.keyword) tags.push('Affixed');
+
+  return {
+    text: finished,
+    mode: options.mode,
+    rule: modeLabel,
+    tags
+  };
+}
+
+function generateBatchCandidate(o, minMemorableCore, affixLen, seen) {
+  const targetLength = pickTargetLength(o, minMemorableCore, affixLen);
+  if (targetLength === null) return { done: true };
+
+  let coreTargetLen = targetLength - affixLen;
+  if (o.mode !== 'memorable') {
+    coreTargetLen = Math.max(3, coreTargetLen);
+  }
+
+  const rawCore = generateCoreWord(o.mode, coreTargetLen, o);
+  if (!rawCore) return null;
+
+  const finished = finalizeGeneratedWord(rawCore, o);
+  if (finished.length < o.minLength || finished.length > o.maxLength) {
+    return null;
+  }
+
+  const normalizedKey = finished.toLowerCase();
+  if (seen.has(normalizedKey) || containsBlockedTerm(finished)) {
+    return null;
+  }
+
+  seen.add(normalizedKey);
+  return { item: buildWordMetadata(finished, o) };
+}
+
 /**
  * Main batch word generator
  * @param {Object} rawOptions 
@@ -681,121 +805,28 @@ export function generateWordBatch(rawOptions = {}) {
   const out = [];
   const seen = new Set();
 
-  // Core length available for the root generated word
-  let affixLen = o.prefix.length + o.suffix.length + o.keyword.length;
+  const affixLen = o.prefix.length + o.suffix.length + o.keyword.length;
   const sepLen = (o.separator || '').length;
   const minMemorableCore = 6 + sepLen;
 
-  if (o.mode === 'memorable') {
-    const maxAvailableCore = o.maxLength - affixLen;
-    if (maxAvailableCore < minMemorableCore) {
-      return {
-        items: [],
-        totalAvailable: 0,
-        error: 'No words matched these criteria. Try relaxing length or exclusions.'
-      };
-    }
+  if (o.mode === 'memorable' && (o.maxLength - affixLen) < minMemorableCore) {
+    return {
+      items: [],
+      totalAvailable: 0,
+      error: 'No words matched these criteria. Try relaxing length or exclusions.'
+    };
   }
 
   const maxAttempts = Math.max(o.count * 60 + 200, 1000);
   let attempts = 0;
-  const deadline = Date.now() + Math.max(800, o.count * 15); // Dynamic ceiling for large batches
+  const deadline = Date.now() + Math.max(800, o.count * 15);
 
   while (out.length < o.count && attempts < maxAttempts && Date.now() < deadline) {
     attempts++;
-    let rawCore = '';
-
-    let targetLength;
-    if (o.mode === 'memorable') {
-      const effMin = Math.max(o.minLength, minMemorableCore + affixLen);
-      if (effMin > o.maxLength) break;
-      targetLength = effMin === o.maxLength
-        ? effMin
-        : effMin + secureRandomInt(o.maxLength - effMin + 1);
-    } else {
-      targetLength = o.minLength === o.maxLength
-        ? o.minLength
-        : o.minLength + secureRandomInt(o.maxLength - o.minLength + 1);
-    }
-
-    let coreTargetLen = targetLength - affixLen;
-    if (o.mode !== 'memorable') {
-      coreTargetLen = Math.max(3, coreTargetLen);
-    }
-
-    if (o.mode === 'say') {
-      rawCore = generatePronounceableWord(coreTargetLen, o.excludeChars);
-    } else if (o.mode === 'read') {
-      rawCore = generateReadableWord(coreTargetLen, o.excludeChars);
-    } else if (o.mode === 'random') {
-      rawCore = generateRandomWord(coreTargetLen, o);
-    } else if (o.mode === 'memorable') {
-      const pair = generateMemorableWord(coreTargetLen, o);
-      if (pair) {
-        rawCore = pair.adj + pair.sep + pair.noun;
-      }
-    }
-
-    if (!rawCore) continue;
-
-    let finished = rawCore;
-
-    // If numbers enabled in non-random modes, each character has a chance to be a number (disabled for say & read)
-    if (o.numbers && o.mode !== 'random' && o.mode !== 'say' && o.mode !== 'read') {
-      finished = applyNumbersByChance(finished, o);
-    }
-
-    // Keyword insertion at a random position in the generated word
-    if (o.keyword) {
-      const insertIdx = secureRandomInt(finished.length + 1);
-      finished = finished.slice(0, insertIdx) + o.keyword + finished.slice(insertIdx);
-    }
-
-    // Leetspeak
-    if (o.leetspeak) {
-      finished = applyLightLeet(finished);
-    }
-
-    // Prefix & Suffix
-    if (o.prefix) finished = o.prefix + finished;
-    if (o.suffix) finished = finished + o.suffix;
-
-    // Apply casing based on Lowercase & Uppercase switchers:
-    // - If only lowercase: all words are lowercase
-    // - If only uppercase: all words are uppercase
-    // - If both: each character can be either lowercase or uppercase (decided randomly)
-    finished = applyCasingByOptions(finished, o);
-
-    // Strict length range validation: must satisfy [minLength, maxLength]
-    if (finished.length < o.minLength || finished.length > o.maxLength) {
-      continue;
-    }
-
-    // Deduplication check & safety check
-    const normalizedKey = finished.toLowerCase();
-    if (seen.has(normalizedKey)) continue;
-    if (containsBlockedTerm(finished)) continue;
-
-    seen.add(normalizedKey);
-
-    // Tags & Mode Label
-    let modeLabel = 'Easy to Say';
-    if (o.mode === 'read') modeLabel = 'Easy to Read';
-    else if (o.mode === 'random') modeLabel = 'Random';
-    else if (o.mode === 'memorable') modeLabel = 'Memorable Words';
-
-    const tags = [modeLabel];
-    if (o.numbers && o.mode !== 'say' && o.mode !== 'read') tags.push('Numbers');
-    if (o.symbols && o.mode === 'random') tags.push('Symbols');
-    if (o.leetspeak) tags.push('Leet');
-    if (o.prefix || o.suffix || o.keyword) tags.push('Affixed');
-
-    out.push({
-      text: finished,
-      mode: o.mode,
-      rule: modeLabel,
-      tags: tags
-    });
+    const cand = generateBatchCandidate(o, minMemorableCore, affixLen, seen);
+    if (!cand) continue;
+    if (cand.done) break;
+    out.push(cand.item);
   }
 
   return {

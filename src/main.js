@@ -12,7 +12,7 @@
 import { generateVariations } from './transforms/engine.js';
 import { PRESETS } from './transforms/presets.js';
 import { getFavorites, saveFavorite, removeFavorite, isFavorite, clearAllFavorites } from './storage.js';
-import { generateWordBatch, DEFAULT_GENERATOR_CONFIG } from './generator/generatorEngine.js';
+import { generateWordBatch, DEFAULT_GENERATOR_CONFIG, secureRandomInt, secureRandomChoice } from './generator/generatorEngine.js';
 import { ALL_SYMBOLS, DEFAULT_SYMBOLS, MINIMAL_SYMBOLS } from './generator/dictionaries.js';
 
 // Random starter word bank for Tweaker
@@ -116,7 +116,7 @@ const elements = {
   statsCount: document.getElementById('stats-count'),
   statsWord: document.getElementById('stats-word'),
   searchFilter: document.getElementById('search-filter'),
-  selectSort: document.getElementById('select-sort'),
+  selectSort: document.querySelector('#select-sort'),
   btnCopyAll: document.getElementById('btn-copy-all'),
   btnExportTxt: document.getElementById('btn-export-txt'),
   loadMoreContainer: document.getElementById('load-more-container'),
@@ -212,43 +212,32 @@ const MODE_HINTS = {
   random: 'Any pseudorandom combinations from enabled character sets.'
 };
 
+function updateOptionWrapperCompatibility(wrapEl, inputEl, isCompatible, configKey) {
+  if (wrapEl) {
+    wrapEl.style.display = 'flex';
+    wrapEl.style.visibility = isCompatible ? 'visible' : 'hidden';
+    wrapEl.style.pointerEvents = isCompatible ? 'auto' : 'none';
+    wrapEl.setAttribute('aria-hidden', isCompatible ? 'false' : 'true');
+  }
+  if (!isCompatible) {
+    if (inputEl) {
+      inputEl.checked = false;
+      inputEl.disabled = true;
+    }
+    genState.config[configKey] = false;
+  } else if (inputEl) {
+    inputEl.disabled = false;
+  }
+}
+
 function updateModeCompatibilityUI(mode) {
   // Numbers are disabled for "say" and "read"
   const isNumbersCompatible = mode !== 'say' && mode !== 'read';
   // Symbols are only compatible with "random" mode
   const isSymbolsCompatible = mode === 'random';
 
-  if (elements.genOptNumbersWrap) {
-    elements.genOptNumbersWrap.style.display = 'flex';
-    elements.genOptNumbersWrap.style.visibility = isNumbersCompatible ? 'visible' : 'hidden';
-    elements.genOptNumbersWrap.style.pointerEvents = isNumbersCompatible ? 'auto' : 'none';
-    elements.genOptNumbersWrap.setAttribute('aria-hidden', isNumbersCompatible ? 'false' : 'true');
-  }
-  if (!isNumbersCompatible) {
-    if (elements.genOptNumbers) {
-      elements.genOptNumbers.checked = false;
-      elements.genOptNumbers.disabled = true;
-    }
-    genState.config.numbers = false;
-  } else if (elements.genOptNumbers) {
-    elements.genOptNumbers.disabled = false;
-  }
-
-  if (elements.genOptSymbolsWrap) {
-    elements.genOptSymbolsWrap.style.display = 'flex';
-    elements.genOptSymbolsWrap.style.visibility = isSymbolsCompatible ? 'visible' : 'hidden';
-    elements.genOptSymbolsWrap.style.pointerEvents = isSymbolsCompatible ? 'auto' : 'none';
-    elements.genOptSymbolsWrap.setAttribute('aria-hidden', isSymbolsCompatible ? 'false' : 'true');
-  }
-  if (!isSymbolsCompatible) {
-    if (elements.genOptSymbols) {
-      elements.genOptSymbols.checked = false;
-      elements.genOptSymbols.disabled = true;
-    }
-    genState.config.symbols = false;
-  } else if (elements.genOptSymbols) {
-    elements.genOptSymbols.disabled = false;
-  }
+  updateOptionWrapperCompatibility(elements.genOptNumbersWrap, elements.genOptNumbers, isNumbersCompatible, 'numbers');
+  updateOptionWrapperCompatibility(elements.genOptSymbolsWrap, elements.genOptSymbols, isSymbolsCompatible, 'symbols');
 
   updateCustomizeSymbolsVisibility();
 }
@@ -316,6 +305,23 @@ function setCustomSymbolsValue(newSymbols) {
   generateNames();
 }
 
+function parseBoundedInt(val, fallback, min, max) {
+  let num = Number.parseInt(val, 10);
+  if (Number.isNaN(num)) num = fallback;
+  return Math.max(min, Math.min(max, num));
+}
+
+function readGenBatchCount() {
+  if (elements.genBatchCustom && elements.genBatchCustom.classList.contains('active') && elements.genBatchCustom.value) {
+    const customVal = Number.parseInt(elements.genBatchCustom.value, 10);
+    if (!Number.isNaN(customVal) && customVal >= 1) {
+      return Math.min(999, customVal);
+    }
+  }
+  const activePill = document.querySelector('.gen-batch-pills .qty-pill.active');
+  return activePill ? (Number.parseInt(activePill.dataset.count, 10) || 16) : 16;
+}
+
 function readGenConfigFromUI() {
   const selectedMode = document.querySelector('input[name="gen-mode"]:checked');
   if (selectedMode) {
@@ -323,12 +329,8 @@ function readGenConfigFromUI() {
   }
   updateModeCompatibilityUI(genState.config.mode);
 
-  let minVal = parseInt(elements.genLenMin.value, 10);
-  let maxVal = parseInt(elements.genLenMax.value, 10);
-  if (isNaN(minVal) || minVal < 3) minVal = 3;
-  if (minVal > 25) minVal = 25;
-  if (isNaN(maxVal) || maxVal < 3) maxVal = 3;
-  if (maxVal > 25) maxVal = 25;
+  let minVal = parseBoundedInt(elements.genLenMin.value, 6, 3, 25);
+  let maxVal = parseBoundedInt(elements.genLenMax.value, 10, 3, 25);
   if (minVal > maxVal) minVal = maxVal;
   genState.config.minLength = minVal;
   genState.config.maxLength = maxVal;
@@ -353,18 +355,7 @@ function readGenConfigFromUI() {
   genState.config.avoidRepeats = elements.genAdvAvoidRepeats.checked;
   genState.config.leetspeak = elements.genAdvLeetspeak.checked;
 
-  if (elements.genBatchCustom && elements.genBatchCustom.classList.contains('active') && elements.genBatchCustom.value) {
-    let customVal = parseInt(elements.genBatchCustom.value, 10);
-    if (!isNaN(customVal) && customVal >= 1) {
-      if (customVal > 999) customVal = 999;
-      genState.config.count = customVal;
-    }
-  } else {
-    const activePill = document.querySelector('.gen-batch-pills .qty-pill.active');
-    if (activePill) {
-      genState.config.count = parseInt(activePill.dataset.count, 10) || 16;
-    }
-  }
+  genState.config.count = readGenBatchCount();
 
   elements.genModeHint.textContent = MODE_HINTS[genState.config.mode] || MODE_HINTS.say;
 }
@@ -398,7 +389,7 @@ function syncGenUIFromConfig() {
 
   const isPreset = [4, 8, 16, 32, 64].includes(c.count);
   elements.genBatchPills.forEach(p => {
-    p.classList.toggle('active', parseInt(p.dataset.count, 10) === c.count);
+    p.classList.toggle('active', Number.parseInt(p.dataset.count, 10) === c.count);
   });
 
   if (elements.genBatchCustom) {
@@ -447,8 +438,8 @@ function applyGenFilter() {
   if (filter) {
     list = list.filter(item =>
       item.text.toLowerCase().includes(filter) ||
-      (item.tags && item.tags.some(t => t.toLowerCase().includes(filter))) ||
-      (item.rule && item.rule.toLowerCase().includes(filter))
+      item.tags?.some(t => t.toLowerCase().includes(filter)) ||
+      item.rule?.toLowerCase().includes(filter)
     );
   }
 
@@ -466,6 +457,148 @@ function applyGenFilter() {
 
 // Reusable SVG for GitHub icon
 const GITHUB_SVG_ICON = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>`;
+
+function handleCardCopy(card, btnCopy, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    card.classList.add('card-copied');
+    if (btnCopy) {
+      btnCopy.classList.add('copied');
+      btnCopy.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      `;
+    }
+    showToast(`Copied "${text}" to clipboard`);
+    setTimeout(() => {
+      card.classList.remove('card-copied');
+      if (btnCopy) {
+        btnCopy.classList.remove('copied');
+        btnCopy.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+          </svg>
+        `;
+      }
+    }, 1200);
+  });
+}
+
+function renderGenCard(item) {
+  const card = document.createElement('div');
+  card.className = 'name-card card-enter';
+  card.setAttribute('tabindex', '0');
+  card.setAttribute('role', 'button');
+  const favorited = isFavorite(item.text);
+
+  card.innerHTML = `
+    <span class="card-text" title="${item.text}">${item.text}</span>
+    <div class="card-actions">
+      <button class="btn-card-icon btn-card-copy" title="Copy to clipboard" aria-label="Copy to clipboard">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+        </svg>
+      </button>
+      <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="${favorited ? 'Remove from favorites' : 'Save to favorites'}" aria-label="Save to favorites">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="${favorited ? '#fbbf24' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      </button>
+      <button class="btn-card-icon btn-card-tweak" title="Morph in Tweaker" aria-label="Morph in Tweaker">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+      <a class="btn-card-icon btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X" aria-label="Check on X">X</a>
+      <a class="btn-card-icon btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
+    </div>
+  `;
+
+  const btnCopy = card.querySelector('.btn-card-copy');
+  const copyName = () => handleCardCopy(card, btnCopy, item.text);
+
+  // Card click: pins action buttons so they stay visible even when not hovering, and copies name
+  card.addEventListener('click', (e) => {
+    if (e.target.closest('.card-actions')) return;
+    document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
+      if (c !== card) c.classList.remove('actions-pinned');
+    });
+    card.classList.add('actions-pinned');
+    copyName();
+  });
+
+  // Double-click copies immediately
+  card.addEventListener('dblclick', (e) => {
+    if (e.target.closest('.card-actions')) return;
+    copyName();
+  });
+
+  // Keyboard support: Enter to pin actions & copy (Space is reserved for generating names)
+  card.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      if (!e.target.closest('.card-actions')) {
+        e.preventDefault();
+        document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
+          if (c !== card) c.classList.remove('actions-pinned');
+        });
+        card.classList.add('actions-pinned');
+        copyName();
+      }
+    }
+  });
+
+  // Copy button
+  if (btnCopy) {
+    btnCopy.addEventListener('click', (e) => {
+      e.stopPropagation();
+      copyName();
+      btnCopy.blur();
+    });
+  }
+
+  // Favorite action
+  const btnFav = card.querySelector('.btn-card-fav');
+  btnFav.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (isFavorite(item.text)) {
+      removeFavorite(item.text);
+      btnFav.classList.remove('active-favorite');
+      btnFav.title = 'Save to favorites';
+      const svg = btnFav.querySelector('svg');
+      svg.setAttribute('fill', 'none');
+      svg.setAttribute('stroke', 'currentColor');
+      showToast(`Removed "${item.text}" from saved`);
+    } else {
+      saveFavorite({ text: item.text, rule: item.tags?.[0] || item.rule || 'Generated', tags: item.tags });
+      btnFav.classList.add('active-favorite');
+      btnFav.title = 'Remove from favorites';
+      const svg = btnFav.querySelector('svg');
+      svg.setAttribute('fill', '#fbbf24');
+      svg.setAttribute('stroke', '#fbbf24');
+      showToast(`Saved "${item.text}" to favorites`);
+    }
+    updateFavoritesUI();
+    btnFav.blur();
+  });
+
+  // Tweak action
+  const btnTweak = card.querySelector('.btn-card-tweak');
+  btnTweak.addEventListener('click', (e) => {
+    e.stopPropagation();
+    tweakGeneratedName(item.text);
+    btnTweak.blur();
+  });
+
+  // Social links propagation guard
+  card.querySelectorAll('.btn-check-link').forEach(link => {
+    link.addEventListener('click', (e) => e.stopPropagation());
+  });
+
+  return card;
+}
 
 function renderGenResults() {
   elements.genStatsCount.textContent = genState.filteredResults.length;
@@ -490,146 +623,7 @@ function renderGenResults() {
   const fragment = document.createDocumentFragment();
 
   for (const item of genState.filteredResults) {
-    const card = document.createElement('div');
-    card.className = 'name-card card-enter';
-    card.setAttribute('tabindex', '0');
-    card.setAttribute('role', 'button');
-    const favorited = isFavorite(item.text);
-
-    card.innerHTML = `
-      <span class="card-text" title="${item.text}">${item.text}</span>
-      <div class="card-actions">
-        <button class="btn-card-icon btn-card-copy" title="Copy to clipboard" aria-label="Copy to clipboard">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-          </svg>
-        </button>
-        <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="${favorited ? 'Remove from favorites' : 'Save to favorites'}" aria-label="Save to favorites">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="${favorited ? '#fbbf24' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-          </svg>
-        </button>
-        <button class="btn-card-icon btn-card-tweak" title="Morph in Tweaker" aria-label="Morph in Tweaker">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-        </button>
-        <a class="btn-card-icon btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X" aria-label="Check on X">X</a>
-        <a class="btn-card-icon btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
-      </div>
-    `;
-
-    const btnCopy = card.querySelector('.btn-card-copy');
-
-    function copyName() {
-      navigator.clipboard.writeText(item.text).then(() => {
-        card.classList.add('card-copied');
-        if (btnCopy) {
-          btnCopy.classList.add('copied');
-          btnCopy.innerHTML = `
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          `;
-        }
-        showToast(`Copied "${item.text}" to clipboard`);
-        setTimeout(() => {
-          card.classList.remove('card-copied');
-          if (btnCopy) {
-            btnCopy.classList.remove('copied');
-            btnCopy.innerHTML = `
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-              </svg>
-            `;
-          }
-        }, 1200);
-      });
-    }
-
-    // Card click: pins action buttons so they stay visible even when not hovering, and copies name
-    card.addEventListener('click', (e) => {
-      if (e.target.closest('.card-actions')) return;
-      document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
-        if (c !== card) c.classList.remove('actions-pinned');
-      });
-      card.classList.add('actions-pinned');
-      copyName();
-    });
-
-    // Double-click copies immediately
-    card.addEventListener('dblclick', (e) => {
-      if (e.target.closest('.card-actions')) return;
-      copyName();
-    });
-
-    // Keyboard support: Enter to pin actions & copy (Space is reserved for generating names)
-    card.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        if (!e.target.closest('.card-actions')) {
-          e.preventDefault();
-          document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
-            if (c !== card) c.classList.remove('actions-pinned');
-          });
-          card.classList.add('actions-pinned');
-          copyName();
-        }
-      }
-    });
-
-    // Copy button
-    if (btnCopy) {
-      btnCopy.addEventListener('click', (e) => {
-        e.stopPropagation();
-        copyName();
-        btnCopy.blur();
-      });
-    }
-
-    // Favorite action
-    const btnFav = card.querySelector('.btn-card-fav');
-    btnFav.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (isFavorite(item.text)) {
-        removeFavorite(item.text);
-        btnFav.classList.remove('active-favorite');
-        btnFav.title = 'Save to favorites';
-        const svg = btnFav.querySelector('svg');
-        svg.setAttribute('fill', 'none');
-        svg.setAttribute('stroke', 'currentColor');
-        showToast(`Removed "${item.text}" from saved`);
-      } else {
-        saveFavorite({ text: item.text, rule: (item.tags && item.tags[0]) || item.rule || 'Generated', tags: item.tags });
-        btnFav.classList.add('active-favorite');
-        btnFav.title = 'Remove from favorites';
-        const svg = btnFav.querySelector('svg');
-        svg.setAttribute('fill', '#fbbf24');
-        svg.setAttribute('stroke', '#fbbf24');
-        showToast(`Saved "${item.text}" to favorites`);
-      }
-      updateFavoritesUI();
-      btnFav.blur();
-    });
-
-    // Tweak action
-    const btnTweak = card.querySelector('.btn-card-tweak');
-    btnTweak.addEventListener('click', (e) => {
-      e.stopPropagation();
-      tweakGeneratedName(item.text);
-      btnTweak.blur();
-    });
-
-
-
-    // Social links propagation guard
-    card.querySelectorAll('.btn-check-link').forEach(link => {
-      link.addEventListener('click', (e) => e.stopPropagation());
-    });
-
-    fragment.appendChild(card);
+    fragment.appendChild(renderGenCard(item));
   }
 
   elements.genCardsGrid.appendChild(fragment);
@@ -799,8 +793,8 @@ function applyFilter() {
   if (filter) {
     list = list.filter(item =>
       item.text.toLowerCase().includes(filter) ||
-      (item.tags && item.tags.some(t => t.toLowerCase().includes(filter))) ||
-      (item.rule && item.rule.toLowerCase().includes(filter))
+      item.tags?.some(t => t.toLowerCase().includes(filter)) ||
+      item.rule?.toLowerCase().includes(filter)
     );
   }
 
@@ -814,6 +808,120 @@ function applyFilter() {
 
   tweakerState.filteredResults = list;
   renderResults();
+}
+
+function renderCard(item) {
+  const card = document.createElement('div');
+  card.className = 'name-card card-enter';
+  card.setAttribute('tabindex', '0');
+  card.setAttribute('role', 'button');
+  const favorited = isFavorite(item.text);
+
+  card.innerHTML = `
+    <span class="card-text" title="${item.text}${item.rule ? ' (' + item.rule + ')' : ''}">${item.text}</span>
+    <div class="card-actions">
+      <button class="btn-card-icon btn-card-copy" title="Copy to clipboard" aria-label="Copy to clipboard">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+        </svg>
+      </button>
+      <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="${favorited ? 'Remove from favorites' : 'Save to favorites'}" aria-label="Save to favorites">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="${favorited ? '#fbbf24' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      </button>
+      <button class="btn-card-icon btn-card-tweak" title="Morph in Tweaker" aria-label="Morph in Tweaker">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+      <a class="btn-card-icon btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X" aria-label="Check on X">X</a>
+      <a class="btn-card-icon btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
+    </div>
+  `;
+
+  const btnCopy = card.querySelector('.btn-card-copy');
+  const copyName = () => handleCardCopy(card, btnCopy, item.text);
+
+  // Card click: pins action buttons so they stay visible even when not hovering, and copies name
+  card.addEventListener('click', (e) => {
+    if (e.target.closest('.card-actions')) return;
+    document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
+      if (c !== card) c.classList.remove('actions-pinned');
+    });
+    card.classList.add('actions-pinned');
+    copyName();
+  });
+
+  // Double-click copies immediately
+  card.addEventListener('dblclick', (e) => {
+    if (e.target.closest('.card-actions')) return;
+    copyName();
+  });
+
+  // Keyboard support: Enter / Space to pin actions & copy
+  card.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      if (!e.target.closest('.card-actions')) {
+        e.preventDefault();
+        document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
+          if (c !== card) c.classList.remove('actions-pinned');
+        });
+        card.classList.add('actions-pinned');
+        copyName();
+      }
+    }
+  });
+
+  // Copy button
+  if (btnCopy) {
+    btnCopy.addEventListener('click', (e) => {
+      e.stopPropagation();
+      copyName();
+    });
+  }
+
+  // Favorite action
+  const btnFav = card.querySelector('.btn-card-fav');
+  btnFav.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (isFavorite(item.text)) {
+      removeFavorite(item.text);
+      btnFav.classList.remove('active-favorite');
+      btnFav.title = 'Save to favorites';
+      const svg = btnFav.querySelector('svg');
+      svg.setAttribute('fill', 'none');
+      svg.setAttribute('stroke', 'currentColor');
+      showToast(`Removed "${item.text}" from saved`);
+    } else {
+      saveFavorite({ text: item.text, rule: item.rule || 'Variation', tags: item.tags });
+      btnFav.classList.add('active-favorite');
+      btnFav.title = 'Remove from favorites';
+      const svg = btnFav.querySelector('svg');
+      svg.setAttribute('fill', '#fbbf24');
+      svg.setAttribute('stroke', '#fbbf24');
+      showToast(`Saved "${item.text}" to favorites`);
+    }
+    updateFavoritesUI();
+  });
+
+  // Tweak action (morph this variation)
+  const btnTweak = card.querySelector('.btn-card-tweak');
+  btnTweak.addEventListener('click', (e) => {
+    e.stopPropagation();
+    elements.inputWord.value = item.text;
+    generate({ isUserAction: true });
+    showToast(`Loaded "${item.text}" into Tweaker!`);
+  });
+
+  // Social links propagation guard
+  card.querySelectorAll('.btn-check-link').forEach(link => {
+    link.addEventListener('click', (e) => e.stopPropagation());
+  });
+
+  return card;
 }
 
 function renderResults() {
@@ -857,145 +965,7 @@ function renderResults() {
   const fragment = document.createDocumentFragment();
 
   for (const item of tweakerState.filteredResults) {
-    const card = document.createElement('div');
-    card.className = 'name-card card-enter';
-    card.setAttribute('tabindex', '0');
-    card.setAttribute('role', 'button');
-    const favorited = isFavorite(item.text);
-
-    card.innerHTML = `
-      <span class="card-text" title="${item.text}${item.rule ? ' (' + item.rule + ')' : ''}">${item.text}</span>
-      <div class="card-actions">
-        <button class="btn-card-icon btn-card-copy" title="Copy to clipboard" aria-label="Copy to clipboard">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-          </svg>
-        </button>
-        <button class="btn-card-icon btn-card-fav ${favorited ? 'active-favorite' : ''}" title="${favorited ? 'Remove from favorites' : 'Save to favorites'}" aria-label="Save to favorites">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="${favorited ? '#fbbf24' : 'none'}" stroke="${favorited ? '#fbbf24' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-          </svg>
-        </button>
-        <button class="btn-card-icon btn-card-tweak" title="Morph in Tweaker" aria-label="Morph in Tweaker">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-        </button>
-        <a class="btn-card-icon btn-check-link" href="https://x.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on X" aria-label="Check on X">X</a>
-        <a class="btn-card-icon btn-check-link btn-check-gh" href="https://github.com/${encodeURIComponent(item.text)}" target="_blank" rel="noopener noreferrer" title="Check on GitHub" aria-label="Check on GitHub">${GITHUB_SVG_ICON}</a>
-      </div>
-    `;
-
-    const btnCopy = card.querySelector('.btn-card-copy');
-
-    function copyName() {
-      navigator.clipboard.writeText(item.text).then(() => {
-        card.classList.add('card-copied');
-        if (btnCopy) {
-          btnCopy.classList.add('copied');
-          btnCopy.innerHTML = `
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          `;
-        }
-        showToast(`Copied "${item.text}" to clipboard`);
-        setTimeout(() => {
-          card.classList.remove('card-copied');
-          if (btnCopy) {
-            btnCopy.classList.remove('copied');
-            btnCopy.innerHTML = `
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-              </svg>
-            `;
-          }
-        }, 1200);
-      });
-    }
-
-    // Card click: pins action buttons so they stay visible even when not hovering, and copies name
-    card.addEventListener('click', (e) => {
-      if (e.target.closest('.card-actions')) return;
-      document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
-        if (c !== card) c.classList.remove('actions-pinned');
-      });
-      card.classList.add('actions-pinned');
-      copyName();
-    });
-
-    // Double-click copies immediately
-    card.addEventListener('dblclick', (e) => {
-      if (e.target.closest('.card-actions')) return;
-      copyName();
-    });
-
-    // Keyboard support: Enter / Space to pin actions & copy
-    card.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        if (!e.target.closest('.card-actions')) {
-          e.preventDefault();
-          document.querySelectorAll('.name-card.actions-pinned').forEach(c => {
-            if (c !== card) c.classList.remove('actions-pinned');
-          });
-          card.classList.add('actions-pinned');
-          copyName();
-        }
-      }
-    });
-
-    // Copy button
-    if (btnCopy) {
-      btnCopy.addEventListener('click', (e) => {
-        e.stopPropagation();
-        copyName();
-      });
-    }
-
-    // Favorite action
-    const btnFav = card.querySelector('.btn-card-fav');
-    btnFav.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (isFavorite(item.text)) {
-        removeFavorite(item.text);
-        btnFav.classList.remove('active-favorite');
-        btnFav.title = 'Save to favorites';
-        const svg = btnFav.querySelector('svg');
-        svg.setAttribute('fill', 'none');
-        svg.setAttribute('stroke', 'currentColor');
-        showToast(`Removed "${item.text}" from saved`);
-      } else {
-        saveFavorite({ text: item.text, rule: item.rule || 'Variation', tags: item.tags });
-        btnFav.classList.add('active-favorite');
-        btnFav.title = 'Remove from favorites';
-        const svg = btnFav.querySelector('svg');
-        svg.setAttribute('fill', '#fbbf24');
-        svg.setAttribute('stroke', '#fbbf24');
-        showToast(`Saved "${item.text}" to favorites`);
-      }
-      updateFavoritesUI();
-    });
-
-    // Tweak action (morph this variation)
-    const btnTweak = card.querySelector('.btn-card-tweak');
-    btnTweak.addEventListener('click', (e) => {
-      e.stopPropagation();
-      elements.inputWord.value = item.text;
-      generate({ isUserAction: true });
-      showToast(`Loaded "${item.text}" into Tweaker!`);
-    });
-
-
-
-    // Social links propagation guard
-    card.querySelectorAll('.btn-check-link').forEach(link => {
-      link.addEventListener('click', (e) => e.stopPropagation());
-    });
-
-    fragment.appendChild(card);
+    fragment.appendChild(renderCard(item));
   }
 
   elements.cardsGrid.appendChild(fragment);
@@ -1092,6 +1062,20 @@ function triggerCopyFeedback(btn) {
   }, 1200);
 }
 
+function shouldIgnoreSpaceHotkey(active) {
+  if (!active) return false;
+  const tag = active.tagName.toLowerCase();
+  if (tag === 'textarea' || active.isContentEditable) return true;
+  if (active instanceof HTMLSelectElement) return true;
+  if (tag === 'input') {
+    const type = (active.type || 'text').toLowerCase();
+    if (type !== 'button' && type !== 'submit' && type !== 'reset') {
+      return true;
+    }
+  }
+  return tag === 'button' && active !== elements.genBtnGenerate && active !== elements.genBtnLoadMore;
+}
+
 function setupEventListeners() {
   // Dismiss pinned card action buttons on click outside or Escape
   document.addEventListener('click', (e) => {
@@ -1107,30 +1091,15 @@ function setupEventListeners() {
     }
 
     // Hotkey: Space to Generate Names (in Generator view)
-    if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar') {
-      if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
-      if (currentSubcategory !== 'generator') return;
-      if (elements.favoritesDrawer && elements.favoritesDrawer.classList.contains('open')) return;
+    const isSpace = e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar';
+    if (!isSpace || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+    if (currentSubcategory !== 'generator') return;
+    if (elements.favoritesDrawer?.classList.contains('open')) return;
 
-      const active = document.activeElement;
-      if (active) {
-        const tag = active.tagName.toLowerCase();
-        if (tag === 'textarea' || active.isContentEditable) return;
-        if (tag === 'select') return;
-        if (tag === 'input') {
-          const type = (active.type || 'text').toLowerCase();
-          if (type !== 'button' && type !== 'submit' && type !== 'reset') {
-            return;
-          }
-        }
-        if (tag === 'button' && active !== elements.genBtnGenerate && active !== elements.genBtnLoadMore) {
-          return;
-        }
-      }
+    if (shouldIgnoreSpaceHotkey(document.activeElement)) return;
 
-      e.preventDefault();
-      generateNames(true);
-    }
+    e.preventDefault();
+    generateNames(true);
   });
 
   // Subcategory Navigation Tabs
@@ -1157,7 +1126,6 @@ function setupEventListeners() {
       });
 
       setTimeout(() => {
-        const statuses = ['Available', 'Taken', 'Reserved'];
         badges.forEach((b, idx) => {
           const st = idx % 2 === 0 ? 'Available' : 'Taken';
           const color = st === 'Available' ? '#10b981' : '#f43f5e';
@@ -1181,9 +1149,9 @@ function setupEventListeners() {
 
   // Length Range Inputs with min/max validation
   function commitMinLength() {
-    let minVal = parseInt(elements.genLenMin.value, 10);
-    const maxVal = parseInt(elements.genLenMax.value, 10) || 10;
-    if (isNaN(minVal) || minVal < 3) minVal = 3;
+    let minVal = Number.parseInt(elements.genLenMin.value, 10);
+    const maxVal = Number.parseInt(elements.genLenMax.value, 10) || 10;
+    if (Number.isNaN(minVal) || minVal < 3) minVal = 3;
     if (minVal > 25) minVal = 25;
     // Check min isn't bigger than max; then it defaults to the same number as max
     if (minVal > maxVal) {
@@ -1195,9 +1163,9 @@ function setupEventListeners() {
   }
 
   function commitMaxLength() {
-    let maxVal = parseInt(elements.genLenMax.value, 10);
-    const minVal = parseInt(elements.genLenMin.value, 10) || 3;
-    if (isNaN(maxVal) || maxVal > 25) maxVal = 25;
+    let maxVal = Number.parseInt(elements.genLenMax.value, 10);
+    const minVal = Number.parseInt(elements.genLenMin.value, 10) || 3;
+    if (Number.isNaN(maxVal) || maxVal > 25) maxVal = 25;
     if (maxVal < 3) maxVal = 3;
     // Vice versa: check max isn't smaller than min; then it defaults to the same number as min
     if (maxVal < minVal) {
@@ -1209,9 +1177,9 @@ function setupEventListeners() {
   }
 
   elements.genLenMin.addEventListener('input', () => {
-    const minVal = parseInt(elements.genLenMin.value, 10);
-    const maxVal = parseInt(elements.genLenMax.value, 10);
-    if (!isNaN(minVal) && minVal >= 3 && minVal <= maxVal) {
+    const minVal = Number.parseInt(elements.genLenMin.value, 10);
+    const maxVal = Number.parseInt(elements.genLenMax.value, 10);
+    if (!Number.isNaN(minVal) && minVal >= 3 && minVal <= maxVal) {
       genState.config.minLength = minVal;
       generateNames();
     }
@@ -1223,9 +1191,9 @@ function setupEventListeners() {
   });
 
   elements.genLenMax.addEventListener('input', () => {
-    const maxVal = parseInt(elements.genLenMax.value, 10);
-    const minVal = parseInt(elements.genLenMin.value, 10);
-    if (!isNaN(maxVal) && maxVal <= 25 && maxVal >= minVal) {
+    const maxVal = Number.parseInt(elements.genLenMax.value, 10);
+    const minVal = Number.parseInt(elements.genLenMin.value, 10);
+    if (!Number.isNaN(maxVal) && maxVal <= 25 && maxVal >= minVal) {
       genState.config.maxLength = maxVal;
       generateNames();
     }
@@ -1245,7 +1213,7 @@ function setupEventListeners() {
         elements.genBatchCustom.value = '';
         elements.genBatchCustom.classList.remove('active');
       }
-      genState.config.count = parseInt(pill.dataset.count, 10);
+      genState.config.count = Number.parseInt(pill.dataset.count, 10);
       pill.blur();
       generateNames(true);
     });
@@ -1253,11 +1221,11 @@ function setupEventListeners() {
 
   if (elements.genBatchCustom) {
     const commitCustomBatch = () => {
-      let val = parseInt(elements.genBatchCustom.value, 10);
-      if (isNaN(val) || val < 1) {
+      let val = Number.parseInt(elements.genBatchCustom.value, 10);
+      if (Number.isNaN(val) || val < 1) {
         const activePill = document.querySelector('.gen-batch-pills .qty-pill.active');
         if (activePill) {
-          genState.config.count = parseInt(activePill.dataset.count, 10);
+          genState.config.count = Number.parseInt(activePill.dataset.count, 10);
           elements.genBatchCustom.value = '';
           elements.genBatchCustom.classList.remove('active');
           return;
@@ -1269,7 +1237,7 @@ function setupEventListeners() {
       genState.config.count = val;
 
       const matchingPill = Array.from(elements.genBatchPills).find(
-        p => parseInt(p.dataset.count, 10) === val
+        p => Number.parseInt(p.dataset.count, 10) === val
       );
       elements.genBatchPills.forEach(p => p.classList.remove('active'));
       if (matchingPill) {
@@ -1284,8 +1252,8 @@ function setupEventListeners() {
     elements.genBatchCustom.addEventListener('input', () => {
       const raw = elements.genBatchCustom.value.trim();
       if (raw !== '') {
-        let val = parseInt(raw, 10);
-        if (!isNaN(val)) {
+        let val = Number.parseInt(raw, 10);
+        if (!Number.isNaN(val)) {
           if (val > 999) {
             val = 999;
             elements.genBatchCustom.value = 999;
@@ -1293,7 +1261,7 @@ function setupEventListeners() {
           if (val >= 1) {
             genState.config.count = val;
             const matchingPill = Array.from(elements.genBatchPills).find(
-              p => parseInt(p.dataset.count, 10) === val
+              p => Number.parseInt(p.dataset.count, 10) === val
             );
             elements.genBatchPills.forEach(p => p.classList.remove('active'));
             if (matchingPill) {
@@ -1377,22 +1345,22 @@ function setupEventListeners() {
   // Generator "Surprise Me"
   elements.genBtnSurprise.addEventListener('click', () => {
     const modes = ['say', 'read', 'memorable', 'random'];
-    const randomMode = modes[Math.floor(Math.random() * modes.length)];
-    const randomMin = Math.floor(Math.random() * 4) + 4; // 4 to 7
-    const randomMax = randomMin + Math.floor(Math.random() * 4) + 1; // min + 1..4
+    const randomMode = secureRandomChoice(modes);
+    const randomMin = secureRandomInt(4) + 4; // 4 to 7
+    const randomMax = randomMin + secureRandomInt(4) + 1; // min + 1..4
     const caseCombos = [
       { lowercase: true, uppercase: false },
       { lowercase: false, uppercase: true },
       { lowercase: true, uppercase: true }
     ];
-    const pickedCase = caseCombos[Math.floor(Math.random() * caseCombos.length)];
+    const pickedCase = secureRandomChoice(caseCombos);
 
     genState.config.mode = randomMode;
     genState.config.minLength = randomMin;
     genState.config.maxLength = randomMax;
     genState.config.lowercase = pickedCase.lowercase;
     genState.config.uppercase = pickedCase.uppercase;
-    genState.config.numbers = Math.random() > 0.6;
+    genState.config.numbers = secureRandomInt(100) >= 60;
     syncGenUIFromConfig();
     elements.genBtnSurprise.blur();
     generateNames(true);
@@ -1452,7 +1420,7 @@ function setupEventListeners() {
   elements.btnShuffle.addEventListener('click', () => {
     const current = elements.inputWord.value.trim().toLowerCase();
     const candidates = SAMPLE_WORDS.filter(w => w !== current);
-    const next = candidates[Math.floor(Math.random() * candidates.length)] || 'nexus';
+    const next = secureRandomChoice(candidates) || 'nexus';
     elements.inputWord.value = next;
     generate({ isUserAction: true });
   });
@@ -1470,7 +1438,7 @@ function setupEventListeners() {
     pill.addEventListener('click', () => {
       elements.qtyPills.forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
-      const qty = parseInt(pill.dataset.qty, 10);
+      const qty = Number.parseInt(pill.dataset.qty, 10);
       tweakerState.targetCount = qty;
       elements.inputCustomQty.value = qty;
       generate();
@@ -1478,14 +1446,14 @@ function setupEventListeners() {
   });
 
   elements.inputCustomQty.addEventListener('change', () => {
-    let val = parseInt(elements.inputCustomQty.value, 10);
-    if (isNaN(val) || val < 5) val = 5;
+    let val = Number.parseInt(elements.inputCustomQty.value, 10);
+    if (Number.isNaN(val) || val < 5) val = 5;
     if (val > 999) val = 999;
     elements.inputCustomQty.value = val;
     tweakerState.targetCount = val;
 
     elements.qtyPills.forEach(p => {
-      p.classList.toggle('active', parseInt(p.dataset.qty, 10) === val);
+      p.classList.toggle('active', Number.parseInt(p.dataset.qty, 10) === val);
     });
 
     generate();
